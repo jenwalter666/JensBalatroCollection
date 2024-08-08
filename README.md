@@ -13,6 +13,6 @@ Coming soon :
 
 Make sure that **none** of the mods included in this repository are nested. They should all be directly installed into the Mods folder.
 
-Correct example : `.../AppData/Roaming/Balatro/Mods/Aurinko/Aurinko.lua`
-Incorrect example 1 : `.../AppData/Roaming/Balatro/Mods/Aurinko/Aurinko/Aurinko.lua`
-Incorrect example 2 : `.../AppData/Roaming/Balatro/Mods/JensBalatroCollection-main/Aurinko/Aurinko.lua`
+- Correct example : `.../AppData/Roaming/Balatro/Mods/Aurinko/Aurinko.lua`
+- Incorrect example 1 : `.../AppData/Roaming/Balatro/Mods/Aurinko/Aurinko/Aurinko.lua`
+- Incorrect example 2 : `.../AppData/Roaming/Balatro/Mods/JensBalatroCollection-main/Aurinko/Aurinko.lua`
