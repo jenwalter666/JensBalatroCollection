@@ -1,0 +1,39 @@
+[manifest]
+version = "1.0.0"
+dump_lua = true
+priority = 99999999
+
+[[patches]]
+[patches.pattern]
+target = "cardarea.lua"
+pattern = "if location == 'front' or self.config.type == 'deck' then"
+position = "before"
+payload = "self.cards = self.cards or {}"
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = "cardarea.lua"
+pattern = "if (self == G.hand or self == G.deck or self == G.discard or self == G.play) and G.view_deck and G.view_deck[1] and G.view_deck[1].cards then return end"
+position = "after"
+payload = "self.children = self.children or {}"
+match_indent = true
+
+[[patches]]
+[patches.regex]
+target = 'functions/common_events.lua'
+pattern = '''(?<indent>[\t ]*)func = function\(\)\n            if card then'''
+position = "before"
+line_prepend = "$indent"
+payload = '''
+blocking = not (G.SETTINGS.GAMESPEED >= 999 and ((to == G.hand and from == G.deck) or (to == G.deck and from == G.hand))), -- Has to be these specific draws only, otherwise it's buggy
+
+'''
+
+[[patches]]
+[patches.pattern]
+target = "functions/UI_definitions.lua"
+pattern = "create_option_cycle({label = localize('b_set_gamespeed'),scale = 0.8, options = {0.5, 1, 2, 4}, opt_callback = 'change_gamespeed', current_option = (G.SETTINGS.GAMESPEED == 0.5 and 1 or G.SETTINGS.GAMESPEED == 4 and 4 or G.SETTINGS.GAMESPEED + 1)}),"
+position = "at"
+payload = "G.UIDEF.nopeus_options(),"
+match_indent = true

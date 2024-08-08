@@ -1,0 +1,22 @@
+[manifest]
+version = "1.0.0"
+dump_lua = true
+priority = 0
+
+# Acceleration in bulk use
+[[patches]]
+[patches.pattern]
+target = "game.lua"
+pattern = "if (G.STATE == G.STATES.HAND_PLAYED) or (G.STATE == G.STATES.NEW_ROUND) then"
+position = "at"
+payload = "if (G.STATE == G.STATES.HAND_PLAYED) or (G.STATE == G.STATES.NEW_ROUND) or Incantation and Incantation.accelerate then"
+match_indent = true
+
+# Observatory
+[[patches]]
+[patches.pattern]
+target = "card.lua"
+pattern = "Xmult_mod = G.P_CENTERS.v_observatory.config.extra"
+position = "at"
+payload = "Xmult_mod = G.P_CENTERS.v_observatory.config.extra^(self.ability.qty or 1)"
+match_indent = true
