@@ -234,7 +234,7 @@ function Card:split(amount, forced)
 		split.config.ignorestacking = true
 		split.created_from_split = true
 		split:add_to_deck()
-		G.consumeables:emplace(split, nil, nil, true)
+		G.consumeables:emplace(split)
 		split.ability.qty = qty2
 		self.ability.qty = self.ability.qty - qty2
 		G.consumeables.config.card_limit = traysize
