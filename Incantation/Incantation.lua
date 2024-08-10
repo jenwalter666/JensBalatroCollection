@@ -12,6 +12,8 @@
 
 Incantation = {consumable_in_use = false, accelerate = false} --will port more things over to this global later, but for now it's going to be mostly empty
 
+local config = SMODS.current_mod.config
+
 local MaxStack = 9999
 local BulkUseLimit = 9999
 local NaiveBulkUseCancel = 50
@@ -21,6 +23,19 @@ local UseBulkCap = false
 local UnsafeMode = false --if true, enables a second "naive long" bulk-use option
 
 local HardLimit = 9007199254740992
+
+SMODS.current_mod.config_tab = function()
+    return {n = G.UIT.ROOT, config = {r = 0.1, align = "cm", padding = 0.1, colour = G.C.BLACK, minw = 8, minh = 4}, nodes = {
+        {n = G.UIT.R, config = {align = "cl", padding = 0}, nodes = {
+            {n = G.UIT.C, config = { align = "cl", padding = 0.05 }, nodes = {
+                create_toggle{ col = true, label = "", scale = 0.85, w = 0, shadow = true, ref_table = config, ref_value = "VanillaMode" },
+            }},
+            {n = G.UIT.C, config = { align = "c", padding = 0 }, nodes = {
+                { n = G.UIT.T, config = { text = localize('incant_vanilla_mode'), scale = 0.35, colour = G.C.UI.TEXT_LIGHT }},
+            }},
+        }},
+    }}
+end
 
 local function tablecontains(haystack, needle)
 	for k, v in pairs(haystack) do
@@ -136,6 +151,10 @@ function Card:subQty(quantity, dont_dissolve)
 end
 
 function Card:CanStack()
+	if config.VanillaMode and not (self.edition and self.edition.negative) then
+		return false
+	end
+
 	return (self.config.center and self.config.center.can_stack) or tablecontains(Stackable, self.ability.set) or tablecontains(StackableIndividual, self.config.center_key)
 end
 
@@ -232,9 +251,12 @@ end
 function Card:try_merge()
 	if self:CanStack() and not self.ignorestacking then
 		if not self.edition then self.edition = {} end
-		for k, v in pairs(G.consumeables.cards) do
+		for _, v in pairs(G.consumeables.cards) do
 			if not v.edition then v.edition = {} end
-			if v ~= self and not v.nomerging and not v.ignorestacking and v.config.center_key == self.config.center_key and ((v.edition.type or '') == (self.edition.type or '')) and (v:getQty() < (UseStackCap and MaxStack or HardLimit)) then
+
+			if config.VanillaMode and not v.edition.negative then
+				-- Ignore this
+			elseif v ~= self and not v.nomerging and not v.ignorestacking and v.config.center_key == self.config.center_key and ((v.edition.type or '') == (self.edition.type or '')) and (v:getQty() < (UseStackCap and MaxStack or HardLimit)) then
 				local space = (UseStackCap and MaxStack or HardLimit) - (v:getQty())
 				v.ability.qty = (v:getQty()) + math.min((self:getQty()), space)
 				v:create_stack_display()
@@ -244,7 +266,7 @@ function Card:try_merge()
 				if (self:getQty()) - space < 1 then
 					self.ignorestacking = true
 					self:remove()
-					break
+					return true
 				else
 					self.ability.qty = (self:getQty()) - space
 					self:set_cost()
