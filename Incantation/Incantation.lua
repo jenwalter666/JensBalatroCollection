@@ -248,7 +248,7 @@ function Card:split(amount, forced)
 	end
 end
 
-function Card:try_merge(instant)
+function Card:try_merge()
 	if self:CanStack() and not self.ignorestacking then
 		if not self.edition then self.edition = {} end
 		for _, v in pairs(G.consumeables.cards) do
@@ -260,10 +260,8 @@ function Card:try_merge(instant)
 				local space = (UseStackCap and MaxStack or HardLimit) - (v:getQty())
 				v.ability.qty = (v:getQty()) + math.min((self:getQty()), space)
 				v:create_stack_display()
-				if not instant then
-					v:juice_up(0.5, 0.5)
-					play_sound('card1')
-				end
+				v:juice_up(0.5, 0.5)
+				play_sound('card1')
 				v:set_cost()
 				if (self:getQty()) - space < 1 then
 					self.ignorestacking = true
