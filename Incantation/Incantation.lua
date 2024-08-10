@@ -34,14 +34,6 @@ SMODS.current_mod.config_tab = function()
                 { n = G.UIT.T, config = { text = localize('incant_vanilla_mode'), scale = 0.35, colour = G.C.UI.TEXT_LIGHT }},
             }},
         }},
-        {n = G.UIT.R, config = {align = "cl", padding = 0}, nodes = {
-            {n = G.UIT.C, config = { align = "cl", padding = 0.05 }, nodes = {
-                create_toggle{ col = true, label = "", scale = 0.85, w = 0, shadow = true, ref_table = config, ref_value = "StackInstantly" },
-            }},
-            {n = G.UIT.C, config = { align = "c", padding = 0 }, nodes = {
-                { n = G.UIT.T, config = { text = localize('incant_instant_merge'), scale = 0.35, colour = G.C.UI.TEXT_LIGHT }},
-            }},
-        }},
     }}
 end
 
@@ -585,21 +577,6 @@ function Card:load(cardTable, other_card)
 		end
 	end
 end
-
-local area_emplace = CardArea.emplace
-
-function CardArea:emplace(card, location, stay_flipped, dont_stack)
-	if not card:CanStack() or self.config.ignorestacking or self ~= G.consumeables or dont_stack or not config.StackInstantly then
-		area_emplace(self, card, location, stay_flipped)
-		return
-	end
-
-	local success = card:try_merge(true)
-	if not success then
-		area_emplace(self, card, location, stay_flipped)
-	end
-end
-
 
 local deckadd = Card.add_to_deck
 function Card:add_to_deck(from_debuff)
