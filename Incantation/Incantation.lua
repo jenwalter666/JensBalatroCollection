@@ -7,7 +7,7 @@
 --- PRIORITY: 999999
 --- BADGE_COLOR: 000000
 --- PREFIX: inc
---- VERSION: 0.1.0
+--- VERSION: 0.2.0
 --- LOADER_VERSION_GEQ: 1.0.0
 
 Incantation = {consumable_in_use = false, accelerate = false} --will port more things over to this global later, but for now it's going to be mostly empty
