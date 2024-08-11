@@ -37,3 +37,12 @@ pattern = "create_option_cycle({label = localize('b_set_gamespeed'),scale = 0.8,
 position = "at"
 payload = "G.UIDEF.nopeus_options(),"
 match_indent = true
+
+# a version of the patch above for brainstorm compat
+[[patches]]
+[patches.pattern]
+target = "functions/UI_definitions.lua"
+pattern = "create_option_cycle({label = localize('b_set_gamespeed'),scale = 0.8, options = {0.5, 1, 2, 4, 8, 16, 32}, opt_callback = 'change_gamespeed', current_option = (G.SETTINGS.GAMESPEED == 0.5 and 1 or G.SETTINGS.GAMESPEED == 4 and 4 or G.SETTINGS.GAMESPEED == 8 and 5 or G.SETTINGS.GAMESPEED == 16 and 6 or G.SETTINGS.GAMESPEED == 32 and 7 or G.SETTINGS.GAMESPEED + 1)}),"
+position = "at"
+payload = "G.UIDEF.nopeus_options(),"
+match_indent = true
