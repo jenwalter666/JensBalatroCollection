@@ -1,7 +1,9 @@
 return {
     misc = {
         dictionary = {
-            incant_vanilla_mode = "Stack negative consumables only",
+            incant_negatives_only = "Stack negatives only",
+            incant_stack_anything = "Allow stack & divide on any consumable",
+			incant_unsafe_mode = 'Unsafe mode'
         }
     }
 }

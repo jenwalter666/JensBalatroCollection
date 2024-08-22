@@ -1,3 +1,5 @@
 return {
-    VanillaMode = false
+    NegativesOnly = false,
+    StackAnything = false,
+	UnsafeMode = false
 }
