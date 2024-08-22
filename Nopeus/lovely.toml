@@ -5,6 +5,23 @@ priority = 99999999
 
 [[patches]]
 [patches.pattern]
+target = "globals.lua"
+pattern = "GAMESPEED = 1,"
+position = "after"
+payload = '''FASTFORWARD = 0,
+STATUSTEXT = 0,'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = "game.lua"
+pattern = "for k, v in pairs(settings_file) do"
+position = "after"
+payload = "if k == 'FASTFORWARD' then v = math.min(1, v) end"
+match_indent = true
+
+[[patches]]
+[patches.pattern]
 target = "cardarea.lua"
 pattern = "if location == 'front' or self.config.type == 'deck' then"
 position = "before"
@@ -35,14 +52,7 @@ blocking = not (G.SETTINGS.GAMESPEED >= 999 and ((to == G.hand and from == G.dec
 target = "functions/UI_definitions.lua"
 pattern = "create_option_cycle({label = localize('b_set_gamespeed'),scale = 0.8, options = {0.5, 1, 2, 4}, opt_callback = 'change_gamespeed', current_option = (G.SETTINGS.GAMESPEED == 0.5 and 1 or G.SETTINGS.GAMESPEED == 4 and 4 or G.SETTINGS.GAMESPEED + 1)}),"
 position = "at"
-payload = "G.UIDEF.nopeus_options(),"
-match_indent = true
-
-# a version of the patch above for brainstorm compat
-[[patches]]
-[patches.pattern]
-target = "functions/UI_definitions.lua"
-pattern = "create_option_cycle({label = localize('b_set_gamespeed'),scale = 0.8, options = {0.5, 1, 2, 4, 8, 16, 32}, opt_callback = 'change_gamespeed', current_option = (G.SETTINGS.GAMESPEED == 0.5 and 1 or G.SETTINGS.GAMESPEED == 4 and 4 or G.SETTINGS.GAMESPEED == 8 and 5 or G.SETTINGS.GAMESPEED == 16 and 6 or G.SETTINGS.GAMESPEED == 32 and 7 or G.SETTINGS.GAMESPEED + 1)}),"
-position = "at"
-payload = "G.UIDEF.nopeus_options(),"
+payload = '''G.UIDEF.nopeus_options(),
+G.UIDEF.nopeus_fastforward_options(),
+G.UIDEF.nopeus_statustext_options(),'''
 match_indent = true

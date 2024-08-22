@@ -7,11 +7,29 @@
 --- PRIORITY: 999999999
 --- BADGE_COLOR: ff3c3c
 --- PREFIX: nopeus
---- VERSION: 1.1.0
+--- VERSION: 2.0.0
 --- LOADER_VERSION_GEQ: 1.0.0
 
+Nopeus = {
+	Off = 'Off',
+	On = 'On',
+	Unsafe = 'Unsafe',
+	AllText = 'All',
+	NoAgain = 'No "Again!"',
+	NoMisc = 'No Misc.',
+	NoText = 'None'
+}
+
+G.FUNCS.change_fastforward = function(args)
+  G.SETTINGS.FASTFORWARD = (args.to_val == Nopeus.On and 1 or args.to_val == Nopeus.Unsafe and 2 or 0)
+end
+
+G.FUNCS.change_statustext = function(args)
+  G.SETTINGS.STATUSTEXT = (args.to_val == Nopeus.NoAgain and 1 or args.to_val == Nopeus.NoMisc and 2 or args.to_val == Nopeus.NoText and 3 or 0)
+end
+
 function G.UIDEF.nopeus_options()
-	local speeds = create_option_cycle({label = localize('b_set_gamespeed'), scale = 0.8, options = {0.25, 0.5, 1, 2, 3, 4, 8, 16, 32, 64, 999}, opt_callback = 'change_gamespeed', current_option = (
+	local speeds = create_option_cycle({label = localize('b_set_gamespeed'), scale = 0.8, options = {0.25, 0.5, 1, 2, 3, 4, 8, 16, 32, 64}, opt_callback = 'change_gamespeed', current_option = (
 		G.SETTINGS.GAMESPEED == 0.25 and 1 or
 		G.SETTINGS.GAMESPEED == 0.5 and 2 or 
 		G.SETTINGS.GAMESPEED == 1 and 3 or 
@@ -22,21 +40,61 @@ function G.UIDEF.nopeus_options()
 		G.SETTINGS.GAMESPEED == 16 and 8 or 
 		G.SETTINGS.GAMESPEED == 32 and 9 or 
 		G.SETTINGS.GAMESPEED == 64 and 10 or 
-		G.SETTINGS.GAMESPEED == 999 and 11 or 
 		3 -- Default to 1 if none match, adjust as necessary
 	)})
 	
 	return speeds
 end
 
+function G.UIDEF.nopeus_fastforward_options()
+	local ff = create_option_cycle({label = 'Fast-Forward', colour = G.C.PURPLE, scale = 0.8, options = {Nopeus.Off, Nopeus.On, Nopeus.Unsafe}, opt_callback = 'change_fastforward', current_option = (
+		G.SETTINGS.FASTFORWARD + 1
+	)})
+	
+	return ff
+end
+
+function G.UIDEF.nopeus_statustext_options()
+	local st = create_option_cycle({label = 'Card Text Popups', colour = G.C.FILTER, w = 4, scale = 0.8, options = {Nopeus.AllText, Nopeus.NoAgain, Nopeus.NoMisc, Nopeus.NoText}, opt_callback = 'change_statustext', current_option = (
+		G.SETTINGS.STATUSTEXT + 1
+	)})
+	
+	return st
+end
+
+local cest = card_eval_status_text
+function card_eval_status_text(card, eval_type, amt, percent, dir, extra)
+	if G.SETTINGS.STATUSTEXT == 3 then
+		return
+	elseif G.SETTINGS.STATUSTEXT == 2 then
+		if eval_type == 'extra' then return end
+		local msg = ((extra or {}).message or '')
+		local is_again_msg = ((extra or {}).nopeus_again)
+		if is_again_msg or msg == localize('k_again_ex') or msg == 'Again?' then
+			return
+		end
+	elseif G.SETTINGS.STATUSTEXT == 1 then
+		local msg = ((extra or {}).message or '')
+		local is_again_msg = ((extra or {}).nopeus_again)
+		if is_again_msg or msg == localize('k_again_ex') or msg == 'Again?' then
+			return
+		end
+	end
+	return cest(card, eval_type, amt, percent, dir, extra)
+end
+
 function Event:init(config)
     self.trigger = config.trigger or 'immediate'
-    if config.blocking ~= nil then 
+	if G.SETTINGS.FASTFORWARD > 1 then
+		self.blocking = false
+    elseif config.blocking ~= nil then 
         self.blocking = config.blocking
     else
         self.blocking = true
     end
-    if config.blockable ~= nil then 
+	if G.SETTINGS.FASTFORWARD > 1 then
+		self.blockable = false
+    elseif config.blockable ~= nil then 
         self.blockable = config.blockable
     else
         self.blockable = true
@@ -47,7 +105,7 @@ function Event:init(config)
     self.no_delete = config.no_delete
     self.created_on_pause = config.pause_force or G.SETTINGS.paused
     self.timer = config.timer or (self.created_on_pause and 'REAL') or 'TOTAL'
-    self.delay = (self.timer == 'REAL' or G.SETTINGS.GAMESPEED < 999) and config.delay or (self.trigger == 'ease' and 0.0001 or 0)
+    self.delay = (self.timer == 'REAL' or G.SETTINGS.FASTFORWARD < 1) and config.delay or (self.trigger == 'ease' and 0.0001 or 0)
     
     if self.trigger == 'ease' then
         self.ease = {
@@ -75,7 +133,7 @@ end
 local ccr = create_card
 
 function create_card(_type, area, legendary, _rarity, skip_materialize, soulable, forced_key, key_append)
-	if G.SETTINGS.GAMESPEED >= 999 and _type == 'Joker' and area ~= G.jokers then
+	if G.SETTINGS.FASTFORWARD > 0 and _type == 'Joker' and area ~= G.jokers then
 		local eternal_perishable_poll = pseudorandom((area == G.pack_cards and 'packetper' or 'etperpoll')..G.GAME.round_resets.ante)
 		local eternal = G.GAME.modifiers.all_eternal or (G.GAME.modifiers.enable_eternals_in_shop and eternal_perishable_poll > 0.7)
 		local perish = G.GAME.modifiers.enable_perishables_in_shop and ((eternal_perishable_poll > 0.4) and (eternal_perishable_poll <= 0.7)) and not eternal
@@ -116,7 +174,7 @@ end
 local hand_to_discard = G.FUNCS.draw_from_hand_to_discard
 
 G.FUNCS.draw_from_hand_to_discard = function (e)
-    if G.SETTINGS.GAMESPEED < 999 then
+    if G.SETTINGS.FASTFORWARD < 1 then
         return hand_to_discard(e)
     end
     
@@ -128,7 +186,7 @@ end
 local discard_to_deck = G.FUNCS.draw_from_discard_to_deck
 
 G.FUNCS.draw_from_discard_to_deck = function (e)
-    if G.SETTINGS.GAMESPEED < 999 then
+    if G.SETTINGS.FASTFORWARD < 1 then
         return discard_to_deck(e)
     end
     
