@@ -31,3 +31,4 @@ Jen's Almanac synergises well with these mods:
 - Cartomancer
 - DebugPlus
 - MoreJokerPacks
+- Galdur
