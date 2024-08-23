@@ -7,7 +7,7 @@
 --- PRIORITY: 999999999
 --- BADGE_COLOR: ff3c3c
 --- PREFIX: nopeus
---- VERSION: 2.0.0
+--- VERSION: 2.0.1
 --- LOADER_VERSION_GEQ: 1.0.0
 
 Nopeus = {
