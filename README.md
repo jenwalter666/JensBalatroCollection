@@ -19,7 +19,7 @@ Make sure that **none** of the mods included in this repository are nested. They
 Jen's Almanac **requires**:
 - Cryptid
 - Incantation
-- Talisman
+- Talisman (Set score limit to OmegaNum (e10##1000))
 
 Jen's Almanac can work without these mods, but some content is restricted without them:
 - SDM_0's Stuff
