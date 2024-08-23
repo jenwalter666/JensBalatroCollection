@@ -7,7 +7,7 @@
 --- PRIORITY: 999999
 --- BADGE_COLOR: 000000
 --- PREFIX: inc
---- VERSION: 0.4.0
+--- VERSION: 0.4.1
 --- LOADER_VERSION_GEQ: 1.0.0
 
 Incantation = {consumable_in_use = false, accelerate = false} --will port more things over to this global later, but for now it's going to be mostly empty
@@ -414,9 +414,10 @@ end
 
 G.FUNCS.can_split_card = function(e)
 	local card = e.config.ref_table
+	local splitone = e.config.issplitone
 	if (card:getQty()) > 1 and card.highlighted and CanUseStackButtons() and not card.ignorestacking then
-        e.config.colour = G.C.PURPLE
-        e.config.button = 'split_half'
+        e.config.colour = splitone and G.C.GREEN or G.C.PURPLE
+        e.config.button = splitone and 'split_one' or 'split_half'
 		e.states.visible = true
 	else
         e.config.colour = G.C.UI.BACKGROUND_INACTIVE
@@ -653,6 +654,7 @@ function Card:highlight(is_highlighted)
 						r = 0.08,
 						padding = 0.1,
 						align = 'cm',
+						issplitone = true,
 						colour = G.C.GREEN,
 						shadow = true,
 						button = 'split_one',
