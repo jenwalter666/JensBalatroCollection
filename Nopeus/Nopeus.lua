@@ -47,6 +47,8 @@ function G.UIDEF.nopeus_options()
 end
 
 function G.UIDEF.nopeus_fastforward_options()
+	if not G.SETTINGS.FASTFORWARD then G.SETTINGS.FASTFORWARD == 0 end
+	if not G.SETTINGS.STATUSTEXT then G.SETTINGS.STATUSTEXT = 0 end
 	local ff = create_option_cycle({label = 'Fast-Forward', colour = G.C.PURPLE, scale = 0.8, options = {Nopeus.Off, Nopeus.On, Nopeus.Unsafe}, opt_callback = 'change_fastforward', current_option = (
 		G.SETTINGS.FASTFORWARD + 1
 	)})
@@ -55,6 +57,8 @@ function G.UIDEF.nopeus_fastforward_options()
 end
 
 function G.UIDEF.nopeus_statustext_options()
+	if not G.SETTINGS.FASTFORWARD then G.SETTINGS.FASTFORWARD == 0 end
+	if not G.SETTINGS.STATUSTEXT then G.SETTINGS.STATUSTEXT = 0 end
 	local st = create_option_cycle({label = 'Card Text Popups', colour = G.C.FILTER, w = 4, scale = 0.8, options = {Nopeus.AllText, Nopeus.NoAgain, Nopeus.NoMisc, Nopeus.NoText}, opt_callback = 'change_statustext', current_option = (
 		G.SETTINGS.STATUSTEXT + 1
 	)})
@@ -85,6 +89,8 @@ end
 
 function Event:init(config)
     self.trigger = config.trigger or 'immediate'
+	if not G.SETTINGS.FASTFORWARD then G.SETTINGS.FASTFORWARD == 0 end
+	if not G.SETTINGS.STATUSTEXT then G.SETTINGS.STATUSTEXT = 0 end
 	if G.SETTINGS.FASTFORWARD > 1 then
 		self.blocking = false
     elseif config.blocking ~= nil then 
