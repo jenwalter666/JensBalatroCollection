@@ -1,0 +1,57 @@
+[manifest]
+version = "1.0.0"
+dump_lua = true
+priority = 9999999999
+
+[[patches]]
+[patches.pattern]
+target = "engine/text.lua"
+pattern = "self.string = self.strings[self.focused_string].string"
+position = "at"
+payload = "if self.strings and self.focused_string and self.strings[self.focused_string] and self.strings[self.focused_string].string then self.string = self.strings[self.focused_string].string else return end"
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = "functions/UI_definitions.lua"
+pattern = '{n=G.UIT.T, config={text = "X", '
+position = "at"
+payload = '{n=G.UIT.T, config={id = "chipmult_operator", text = "X", '
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = "functions/misc_functions.lua"
+pattern = "G.ARGS.score_intensity.organ = G.video_organ or G.ARGS.score_intensity.required_score > 0 and math.max(math.min(0.4, 0.1*math.log(G.ARGS.score_intensity.earned_score/(G.ARGS.score_intensity.required_score+1), 5)),0.) or 0"
+position = "at"
+payload = '''
+local notzero = to_big(G.ARGS.score_intensity.required_score) > to_big(0)
+local e_s = to_big(G.ARGS.score_intensity.earned_score)
+local r_s = to_big(G.ARGS.score_intensity.required_score+1)
+local googol = to_big(1e100)
+G.ARGS.score_intensity.ambientDramatic2 = notzero and to_big(math.max(math.min(1, 0.1*(math.log(e_s/(r_s:arrow(4, googol)), 5))),0.)):to_number() or 0
+G.ARGS.score_intensity.ambientDramatic1 = ((G.ARGS.score_intensity.ambientDramatic2 or 0) <= 0.05 and notzero) and to_big(math.max(math.min(1, 0.1*(math.log(e_s/(r_s:arrow(3, googol)), 5))),0.)):to_number() or 0
+G.ARGS.score_intensity.ambientSurreal3 = ((G.ARGS.score_intensity.ambientDramatic2 or 0) <= 0.05 and (G.ARGS.score_intensity.ambientDramatic1 or 0) <= 0.05 and notzero) and to_big(math.max(math.min(1, 0.1*(math.log(e_s/(r_s:arrow(2, googol)), 5))),0.)):to_number() or 0
+G.ARGS.score_intensity.ambientSurreal2 = ((G.ARGS.score_intensity.ambientDramatic2 or 0) <= 0.05 and (G.ARGS.score_intensity.ambientDramatic1 or 0) <= 0.05 and (G.ARGS.score_intensity.ambientSurreal3 or 0) <= 0.05 and notzero) and to_big(math.max(math.min(1, 0.1*(math.log(e_s/(r_s^googol), 5))),0.)):to_number() or 0
+G.ARGS.score_intensity.ambientSurreal1 = ((G.ARGS.score_intensity.ambientDramatic2 or 0) <= 0.05 and (G.ARGS.score_intensity.ambientDramatic1 or 0) <= 0.05 and (G.ARGS.score_intensity.ambientSurreal3 or 0) <= 0.05 and (G.ARGS.score_intensity.ambientSurreal2 or 0) <= 0.05 and notzero) and math.max(math.min(1, 0.1*math.log(G.ARGS.score_intensity.earned_score/((G.ARGS.score_intensity.required_score+1)*1e100), 5)),0.) or 0
+G.ARGS.score_intensity.organ = (G.video_organ or ((G.ARGS.score_intensity.ambientSurreal3 or 0) <= 0.05 and (G.ARGS.score_intensity.ambientSurreal2 or 0) <= 0.05 and (G.ARGS.score_intensity.ambientSurreal1 or 0) <= 0.05 and notzero)) and math.max(math.min(1, 0.1*math.log(G.ARGS.score_intensity.earned_score/(G.ARGS.score_intensity.required_score+1), 5)),0.) or 0
+notzero = nil
+e_s = nil
+r_s = nil
+googol = nil
+'''
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = "functions/misc_functions.lua"
+pattern = "ambientOrgan1 = {volfunc = function(_prev_volume) return _prev_volume*(1 - dt) + dt*0.6*(G.SETTINGS.SOUND.music_volume + 100)/200*(G.ARGS.score_intensity.organ) end},"
+position = "after"
+payload = '''
+	jen_ambientSurreal1 = {volfunc = function(_prev_volume) return _prev_volume*(1 - dt) + dt*0.6*(G.SETTINGS.SOUND.music_volume + 100)/200*(G.ARGS.score_intensity.ambientSurreal1 * 1.8) end},
+	jen_ambientSurreal2 = {volfunc = function(_prev_volume) return _prev_volume*(1 - dt) + dt*0.6*(G.SETTINGS.SOUND.music_volume + 100)/200*(G.ARGS.score_intensity.ambientSurreal2 * 2) end},
+	jen_ambientSurreal3 = {volfunc = function(_prev_volume) return _prev_volume*(1 - dt) + dt*0.6*(G.SETTINGS.SOUND.music_volume + 100)/200*(G.ARGS.score_intensity.ambientSurreal3 * 2.2) end},
+	jen_ambientDramatic1 = {volfunc = function(_prev_volume) return _prev_volume*(1 - dt) + dt*0.6*(G.SETTINGS.SOUND.music_volume + 100)/200*(G.ARGS.score_intensity.ambientDramatic1 * 2.4) end},
+	jen_ambientDramatic2 = {volfunc = function(_prev_volume) return _prev_volume*(1 - dt) + dt*0.6*(G.SETTINGS.SOUND.music_volume + 100)/200*(G.ARGS.score_intensity.ambientDramatic2 * 2.6) end},
+'''
+match_indent = true
