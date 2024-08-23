@@ -6,13 +6,10 @@
 
 // This dithering shader was made by Klems
 // https://www.shadertoy.com/view/ltSSzW
-
-const mat4 matrix = mat4(
-	16.0/17.0, 05.0/17.0, 13.0/17.0, 01.0/17.0,
-	08.0/17.0, 12.0/17.0, 04.0/17.0, 09.0/17.0,
-	14.0/17.0, 02.0/17.0, 15.0/17.0, 03.0/17.0,
-	11.0/17.0, 10.0/17.0, 07.0/17.0, 06.0/17.0
-);
+vec4 matrix0 = vec4(16.0/17.0, 05.0/17.0, 13.0/17.0, 01.0/17.0);
+vec4 matrix1 = vec4(08.0/17.0, 12.0/17.0, 04.0/17.0, 09.0/17.0);
+vec4 matrix2 = vec4(14.0/17.0, 02.0/17.0, 15.0/17.0, 03.0/17.0);
+vec4 matrix3 = vec4(11.0/17.0, 10.0/17.0, 07.0/17.0, 06.0/17.0);
 
 bool getValue(float brightness, vec2 pos, float pixel_size) {
 
@@ -23,9 +20,12 @@ bool getValue(float brightness, vec2 pos, float pixel_size) {
     vec2 pixel = floor(mod((pos.xy+0.5)/pixel_size, 4.0));
     int x = int(pixel.x);
     int y = int(pixel.y);
-
+	
 	if (x < 4 && y < 4) {
-		return brightness < matrix[x][y];
+ 		if (x == 0) return brightness < matrix0[y];
+ 		if (x == 1) return brightness < matrix1[y];
+ 		if (x == 2) return brightness < matrix2[y];
+ 		if (x == 3) return brightness < matrix3[y];
 	}
 
 	return false;
