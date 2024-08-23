@@ -7,7 +7,7 @@
 --- PRIORITY: 9999999
 --- BADGE_COLOR: 3c3cff
 --- PREFIX: jen
---- VERSION: 0.0.1a
+--- VERSION: 0.0.2a
 --- DEPENDENCIES: [Talisman>=2.0.0-beta4, Cryptid>=0.5.0-pre, incantation>=0.4.1]
 --- CONFLICTS: [fastsc]
 --- LOADER_VERSION_GEQ: 1.0.0
@@ -2389,28 +2389,30 @@ SMODS.Joker {
         return {vars = {hasgodsmarble() and 'No! NO! STOP! STOP IT!!' or "My treasures are remnants", hasgodsmarble() and 'THIS RELIC IS TOO MUCH!! NO!!! NOOOOOOooo-!!!' or "of tales old and new."}}
     end,
 	calculate = function(self, card, context)
-		if context.selling_card and context.card.ability.set == 'Joker' and context.card ~= card and context.card.config.center.rarity ~= 1 and context.card.config.center.rarity ~= 2 then
-			card_eval_status_text(card, 'extra', nil, nil, nil, {message = chemach_phrases[math.random(#chemach_phrases)], colour = G.C.PURPLE})
-			for k, v in pairs(G.jokers.cards) do
-				if v ~= card and v ~= context.card then
-					if not v.config.center.immune_to_chemach then
-						v:remove_from_deck()
-						for a, b in pairs(v.ability) do
-							if a == 'extra' then
-								if type(v.ability.extra) == 'number' then
-									v.ability.extra = v.ability.extra * 2
-								elseif type(v.ability.extra) == 'table' and next(v.ability.extra) then
-									for c, d in pairs(v.ability.extra) do
-										if type(d) == 'number' then
-											v.ability.extra[c] = d * 2
+		if context.selling_card then
+			if context.card.ability.set == 'Joker' and context.card.config.center.rarity ~= 1 and context.card.config.center.rarity ~= 2 then
+				card_eval_status_text(card, 'extra', nil, nil, nil, {message = chemach_phrases[math.random(#chemach_phrases)], colour = G.C.PURPLE})
+				for k, v in pairs(G.jokers.cards) do
+					if v ~= card and v ~= context.card then
+						if not v.config.center.immune_to_chemach then
+							v:remove_from_deck()
+							for a, b in pairs(v.ability) do
+								if a == 'extra' then
+									if type(v.ability.extra) == 'number' then
+										v.ability.extra = v.ability.extra * 2
+									elseif type(v.ability.extra) == 'table' and next(v.ability.extra) then
+										for c, d in pairs(v.ability.extra) do
+											if type(d) == 'number' then
+												v.ability.extra[c] = d * 2
+											end
 										end
 									end
+								elseif a ~= 'order' and a ~= 'hyper_chips' and a ~= 'hyper_mult' and type(b) == 'number' and b > (batchfind(a, vars1plus) and 1 or 0) then
+									v.ability[a] = b * 2
 								end
-							elseif a ~= 'order' and a ~= 'hyper_chips' and a ~= 'hyper_mult' and type(b) == 'number' and b > (batchfind(a, vars1plus) and 1 or 0) then
-								v.ability[a] = b * 2
 							end
+							v:add_to_deck()
 						end
-						v:add_to_deck()
 					end
 				end
 			end
@@ -4001,8 +4003,10 @@ SMODS.Joker {
 	loc_txt = {
 		name = 'The Monk',
 		text = {
-			'{C:attention}Retrigger{} scored cards {C:attention}multiple{} times,',
-			"using the {C:attention}card's rank value{} as the {C:attention}amount of times to retrigger{}"
+			'{C:attention}Retrigger{} scored cards,',
+			"using the {C:attention}card's rank{}",
+			'as the {C:attention}number of times to retrigger{}',
+			'{C:inactive}(ex. 9 = 9 times, Jack = 11 times, Ace = 14 times, etc.){}'
 		}
 	},
 	pos = { x = 0, y = 0 },
@@ -4220,7 +4224,8 @@ SMODS.Joker {
 		name = 'The Rivulet',
 		text = {
 			'Retrigger {C:attention}all Jokers{}, using its {C:attention}order {C:inactive}(left-to-right){}',
-			'in the Joker tray as the {C:attention}number of times to retrigger{}'
+			'in the Joker tray as the {C:attention}number of times to retrigger{}',
+			'{C:inactive}(ex. retrigger leftmost joker 1 time, next joker 2 times, one after 3 times, etc.){}'
 		}
 	},
 	pos = { x = 0, y = 0 },
@@ -4355,7 +4360,9 @@ local totalownedcards_areastocheck = {
 	'hand',
 	'jokers',
 	'consumeables',
-	'deck'
+	'deck',
+	'discard',
+	'play'
 }
 
 local function totalownedcards()
@@ -4408,26 +4415,29 @@ SMODS.Joker {
 	calculate = function(self, card, context)
         if noretriggers(context) and not context.blueprint then
 			if not card.ability.lvmod then card.ability.lvmod = 0 end
+			if not card.ability.oldlvmod then card.ability.oldlvmod = 0 end
 			local amnt = totalownedcards()
-			if amnt ~= card.ability.lvmod and not card.queue_levelchange then
-				local diff = amnt - card.ability.lvmod
+			if amnt ~= card.ability.lvmod then
 				card.ability.lvmod = amnt
-				card.queue_levelchange = true
-				G.E_MANAGER:add_event(Event({
-					func = function()
-						G.E_MANAGER:add_event(Event({
-							func = function()
-								if card then
-									card.queue_levelchange = nil
-									card.cumulative_lvs = diff
-									card:apply_cumulative_levels()
+				if not card.queue_levelchange then
+					card.queue_levelchange = true
+					G.E_MANAGER:add_event(Event({
+						func = function()
+							G.E_MANAGER:add_event(Event({
+								func = function()
+									if card then
+										card.queue_levelchange = nil
+										card.cumulative_lvs = card.ability.lvmod - card.ability.oldlvmod
+										card.ability.oldlvmod = card.ability.lvmod
+										card:apply_cumulative_levels()
+									end
+									return true
 								end
-								return true
-							end
-						}))
-						return true
-					end
-				}))
+							}))
+							return true
+						end
+					}))
+				end
 			end
         end
 	end
@@ -5851,9 +5861,6 @@ if FusionJokers then
 				'{C:attention}Poker hands{} gain',
 				'{X:black,C:red,s:4}^^^3{C:purple} Chips & Mult{}',
 				'when leveled up',
-				'Increase the {C:attention}operation and operand{} by {C:attention}1{}',
-				'whenever a non-{C:dark_edition}Negative {X:attention}Godsmarble{} is acquired,',
-				'then make said {X:attention}Godsmarble {C:dark_edition}Negative{}',
 				' ',
 				"{C:inactive,s:1.25,E:1}my body feels so... delicate, but strong at the same time...?{}"
 			}
@@ -6480,8 +6487,7 @@ for k, v in ipairs(enhancereversetarots) do
 			name = v.n,
 			text = {
 				'Creates a {C:green}full deck{} of {C:attention}' .. v.c .. '{}',
-				'cards and {C:blue}adds them to your deck{}',
-				'{C:inactive}(Total of 52 cards){}'
+				'cards and {C:blue}adds them to your deck{}'
 			}
 		},
 		set_card_type_badge = torat,
@@ -8961,8 +8967,8 @@ local rfd = Card.remove_from_deck
 function Card.remove_from_deck(self, from_debuff)
 	if G.jokers and G.consumeables then
 		if self.added_to_deck and self.config and self.config.center and self.config.center.abilitycard and type(self.config.center.abilitycard) == 'string' then
-			G.consumeables.config.card_limit = G.consumeables.config.card_limit - 1
 			if #SMODS.find_card(self.config.center.key) <= 0 then
+				G.consumeables.config.card_limit = G.consumeables.config.card_limit - 1
 				for k, v in pairs(SMODS.find_card(self.config.center.abilitycard)) do
 					v.ability.eternal = nil
 					v:start_dissolve()
