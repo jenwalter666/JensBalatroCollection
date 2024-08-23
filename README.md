@@ -32,3 +32,4 @@ Jen's Almanac synergises well with these mods:
 - DebugPlus
 - MoreJokerPacks
 - Galdur
+- Handy
