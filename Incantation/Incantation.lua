@@ -4,10 +4,10 @@
 --- MOD_ID: incantation
 --- MOD_AUTHOR: [jenwalter666, MathIsFun_]
 --- MOD_DESCRIPTION: Enables the ability to stack identical consumables.
---- PRIORITY: 999999
+--- PRIORITY: 99999999999
 --- BADGE_COLOR: 000000
 --- PREFIX: inc
---- VERSION: 0.4.1
+--- VERSION: 0.4.2
 --- LOADER_VERSION_GEQ: 1.0.0
 
 Incantation = {consumable_in_use = false, accelerate = false} --will port more things over to this global later, but for now it's going to be mostly empty
@@ -131,6 +131,58 @@ function AllowBulkUseIndividual(key)
 	AllowDividingIndividual(key)
 	if not tablecontains(BulkUsableIndividual, key) then
 		table.insert(BulkUsableIndividual, key)
+	end
+end
+
+--[[
+
++++ MOD SUPPORT SKELETON +++
+
+if not IncantationAddons then
+	IncantationAddons = {
+		Stacking = {},
+		Dividing = {},
+		BulkUse = {},
+		StackingIndividual = {},
+		DividingIndividual = {},
+		BulkUseIndividual = {}
+	}
+end
+
+then you can use table.insert() to insert sets/keys into the subtables contained within IncantationAddons
+
+]]
+
+if IncantationAddons then
+	if #IncantationAddons.Stacking > 0 then
+		for _, v in pairs(IncantationAddons.Stacking) do
+			AllowStacking(v)
+		end
+	end
+	if #IncantationAddons.StackingIndividual > 0 then
+		for _, v in pairs(IncantationAddons.StackingIndividual) do
+			AllowStackingIndividual(v)
+		end
+	end
+	if #IncantationAddons.Dividing > 0 then
+		for _, v in pairs(IncantationAddons.Dividing) do
+			AllowDividing(v)
+		end
+	end
+	if #IncantationAddons.DividingIndividual > 0 then
+		for _, v in pairs(IncantationAddons.DividingIndividual) do
+			AllowDividingIndividual(v)
+		end
+	end
+	if #IncantationAddons.BulkUse > 0 then
+		for _, v in pairs(IncantationAddons.BulkUse) do
+			AllowBulkUse(v)
+		end
+	end
+	if #IncantationAddons.BulkUseIndividual > 0 then
+		for _, v in pairs(IncantationAddons.BulkUseIndividual) do
+			AllowBulkUseIndividual(v)
+		end
 	end
 end
 
