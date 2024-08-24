@@ -4,11 +4,35 @@
 --- MOD_ID: aurinko
 --- MOD_AUTHOR: [jenwalter666]
 --- MOD_DESCRIPTION: Lets planets naturally appear with editions, applies editions to hands when leveling
---- PRIORITY: 989999999
+--- PRIORITY: 98999999999
 --- BADGE_COLOR: 009cff
 --- PREFIX: aurinko
---- VERSION: 0.3.0
+--- VERSION: 0.4.0
 --- LOADER_VERSION_GEQ: 1.0.0
+
+--[[
+
++++ MOD SUPPORT SKELETON : ALWAYS INCLUDE THIS IN YOUR MOD'S INITIALISATION SOMEWHERE +++
+
+if not AurinkoAddons then
+	AurinkoAddons = {}
+end
+
+then do AurinkoAddons.<edition key> = function(card, hand, instant, amount) <code> end
+
+When level up caused by card, if function exists in AurinkoAddons with matching key, will execute it passing same arguments in level_up_hand through it
+
+You can also make it a table if you want functions that execute before or after native edition effects:
+
+AurinkoAddons.<edition key> = {before = function(card, hand, instant, amount) <code> end, after = function(card, hand, instant, amount) <code> end}
+
+Your edition's key is usually <mod prefix>_<edition's definition key>
+
+]]
+
+if not AurinkoAddons then
+	AurinkoAddons = {}
+end
 
 local function round( num, idp )
 
@@ -37,7 +61,7 @@ local luhr = level_up_hand
 function level_up_hand(card, hand, instant, amount)
 	amount = amount or 1
 	luhr(card, hand, instant, amount)
-		if card and card.ability and card.ability.consumeable and amount ~= 0 then
+		if card and card.ability and amount ~= 0 then
 			if card.edition then
 				local factor = 0
 				local op = ''
@@ -84,8 +108,10 @@ function level_up_hand(card, hand, instant, amount)
 					end
 				elseif not card.edition.negative then
 					local obj = card.edition
-					if obj.aurinko and type(obj.aurinko) == 'function' then
-						obj:aurinko(card, hand, instant, amount)
+					if type(AurinkoAddons[card.edition.type]) == 'table' and type(AurinkoAddons[card.edition.type].before) == 'function' then
+						AurinkoAddons[card.edition.type].before(card, hand, instant, amount)
+					elseif type(AurinkoAddons[card.edition.type]) == 'function' then
+						AurinkoAddons[card.edition.type](card, hand, instant, amount)
 					end
 					if obj.chips then
 						factor = obj.chips * amount
@@ -315,6 +341,12 @@ function level_up_hand(card, hand, instant, amount)
 							end
 						end
 					end
+					if obj.p_dollars then
+						ease_dollars(obj.p_dollars * amount)
+					end
+					if type(AurinkoAddons[card.edition.type]) == 'table' and type(AurinkoAddons[card.edition.type].after) == 'function' then
+						AurinkoAddons[card.edition.type].after(card, hand, instant, amount)
+					end
 					if (obj.repetitions or obj.retriggers) and not card.aurinko_already_repeated then
 						card.aurinko_already_repeated = true
 						local quota = (obj.repetitions or obj.retriggers) * amount
@@ -323,9 +355,6 @@ function level_up_hand(card, hand, instant, amount)
 							quota = quota + math.abs(predicted_level) + 1
 						end
 						level_up_hand(card, hand, instant, quota)
-					end
-					if obj.p_dollars then
-						ease_dollars(obj.p_dollars * amount)
 					end
 					card.aurinko_already_repeated = false
 				end
