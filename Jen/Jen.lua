@@ -7,7 +7,7 @@
 --- PRIORITY: 9999999
 --- BADGE_COLOR: 3c3cff
 --- PREFIX: jen
---- VERSION: 0.0.3a-pre1
+--- VERSION: 0.0.3a-pre2
 --- DEPENDENCIES: [Talisman>=2.0.0-beta4, Cryptid>=0.5.0~pre2, incantation>=0.4.1]
 --- CONFLICTS: [fastsc]
 --- LOADER_VERSION_GEQ: 1.0.0
@@ -5629,7 +5629,7 @@ if FusionJokers then
 					for k, v in pairs(targets) do
 						local qty = v:getQty()
 						fastforward = intensity > 5
-						local ante = math.min(G.GAME.round_resets.ante, 100)
+						local ante = math.min(math.max(1, G.GAME.round_resets.ante), 1e9)
 						local levels = pseudorandom(pseudoseed('fateeater_levels'), ante, ante * 5)
 						local addchips = pseudorandom(pseudoseed('fateeater_chips'), 25 * ante, 50 * ante)
 						local addmult = pseudorandom(pseudoseed('fateeater_mult'), 4 * ante, 30 * ante)
@@ -5853,7 +5853,7 @@ if FusionJokers then
 					for k, v in pairs(targets) do
 						local qty = v:getQty()
 						fastforward = intensity > 5
-						local ante = math.min(G.GAME.round_resets.ante, 100)
+						local ante = math.min(math.max(1, G.GAME.round_resets.ante), 1e9)
 						local levels = pseudorandom(pseudoseed('foundry_levels'), ante, ante * 5)
 						local addchips = pseudorandom(pseudoseed('foundry_chips'), 25 * ante, 50 * ante)
 						local addmult = pseudorandom(pseudoseed('foundry_mult'), 4 * ante, 30 * ante)
@@ -6068,7 +6068,7 @@ if FusionJokers then
 					for k, v in pairs(targets) do
 						local qty = v:getQty()
 						fastforward = intensity > 5
-						local ante = math.min(G.GAME.round_resets.ante, 100)
+						local ante = math.min(math.max(1, G.GAME.round_resets.ante), 1e9)
 						local levels = pseudorandom(pseudoseed('broken_levels'), ante, ante * 5)
 						local addchips = pseudorandom(pseudoseed('broken_chips'), 25 * ante, 50 * ante)
 						local addmult = pseudorandom(pseudoseed('broken_mult'), 4 * ante, 30 * ante)
