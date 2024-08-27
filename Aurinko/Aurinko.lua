@@ -308,7 +308,7 @@ function level_up_hand(card, hand, instant, amount)
 							end
 							if not instant then
 								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
-									play_sound('talisman_eechip')
+									play_sound('talisman_eemult')
 									card:juice_up(0.8, 0.5)
 								return true end }))
 								update_hand_text({delay = 0}, {mult = op .. number_format(factor), StatusText = true})
@@ -328,7 +328,7 @@ function level_up_hand(card, hand, instant, amount)
 							end
 							if not instant then
 								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
-									play_sound('talisman_eeechip')
+									play_sound('talisman_eeemult')
 									card:juice_up(0.8, 0.5)
 								return true end }))
 								update_hand_text({delay = 0}, {mult = op .. number_format(factor), StatusText = true})
@@ -348,7 +348,7 @@ function level_up_hand(card, hand, instant, amount)
 							end
 							if not instant then
 								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
-									play_sound('talisman_eeechip')
+									play_sound('talisman_eeemult')
 									card:juice_up(0.8, 0.5)
 								return true end }))
 								update_hand_text({delay = 0}, {mult = op .. number_format(factor), StatusText = true})
@@ -389,7 +389,7 @@ function create_card(_type, area, legendary, _rarity, skip_materialize, soulable
 		blocking = false,
 		blockable = false,
 		func = function()
-			if not card.edition and (((_type == 'Planet' or _type == 'Planet_dx') and (obj.aurinko or (card.ability.consumeable and card.ability.consumeable.hand_type))) or AurinkoWhitelist[card.ability.name]) then
+			if not card.edition and (((_type == 'Planet' or _type == 'Planet_dx') and (obj.aurinko or (card.ability.consumeable and card.ability.consumeable.hand_type))) or AurinkoWhitelist[card.config.center.key]) then
 				local edition = poll_edition('edi'..(key_append or '')..tostring(G.GAME.round_resets.ante), math.max(1, math.min(1 + ((G.GAME.round_resets.ante / 2) - 0.5), 10)), true)
 				if edition and not edition.aurinko_blacklist then
 					card:set_edition(edition)
