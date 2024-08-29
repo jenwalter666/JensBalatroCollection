@@ -9601,7 +9601,7 @@ SMODS.Consumable {
         return {vars = {center.ability.extra.copies}}
     end,
 	can_use = function(self, card)
-		return abletouseconsumables() and (#((G.jokers or {}).highlighted or {}) + #((G.hand or {}).highlighted or {})) > 0
+		return abletouseconsumables() and #((G.hand or {}).highlighted or {}) > 0
 	end,
 	use = function(self, card, area, copier)
 		if #G.hand.highlighted > 0 then
