@@ -10128,6 +10128,7 @@ SMODS.Consumable {
 	soul_pos = { x = 1, y = 15 },
 	cost = 175,
 	soul_rate = 0,
+	hidden = true,
 	unlocked = true,
 	discovered = true,
 	no_doe = true,
