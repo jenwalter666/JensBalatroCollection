@@ -4,13 +4,35 @@
 --- MOD_ID: jen
 --- MOD_AUTHOR: [jenwalter666]
 --- MOD_DESCRIPTION: Pandemonium and darkness incarnate.
---- PRIORITY: 9999999
+--- PRIORITY: 999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
 --- BADGE_COLOR: 3c3cff
 --- PREFIX: jen
---- VERSION: 0.0.3a-pre2
---- DEPENDENCIES: [Talisman>=2.0.0-beta4, Cryptid>=0.5.0~pre2, incantation>=0.4.1]
+--- VERSION: 0.0.4a
+--- DEPENDENCIES: [Talisman>=2.0.0-beta6, Cryptid>=0.5.0~pre2, incantation>=0.4.1]
 --- CONFLICTS: [fastsc]
 --- LOADER_VERSION_GEQ: 1.0.0
+
+if not get_random_consumable then
+	function get_random_consumable(seed, excluded_flags)
+		excluded_flags = excluded_flags or {'hidden', 'no_doe', 'no_grc'}
+		local selection = 'n/a'
+		local passes = 0
+		local tries = 500
+		while true do
+			tries = tries - 1
+			passes = 0
+			selection = G.P_CENTERS[pseudorandom_element(G.P_CENTER_POOLS.Consumeables, pseudoseed(seed or 'grc')).key]
+			for k, v in pairs(excluded_flags) do
+				if not selection[v] then
+					passes = passes + 1
+				end
+			end
+			if passes >= #excluded_flags or tries <= 0 then
+				return selection
+			end
+		end
+	end
+end
 
 SMODS.Atlas {
 	key = "modicon",
@@ -21,6 +43,7 @@ SMODS.Atlas {
 
 Jen = {
 	config = {
+		ex_chance = 100,
 		wee_sizemod = 1.5,
 		ante_threshold = 20,
 		ante_pow10 = 25,
@@ -60,15 +83,16 @@ end
 local gsp = get_starting_params
 function get_starting_params()
 	newTable = gsp()
-	newTable.consumable_slots = newTable.consumable_slots + 198
+	newTable.consumable_slots = newTable.consumable_slots + 498
 	return newTable
 end
 
+table.insert(IncantationAddons.Dividing, 'Joker Abilities')
 table.insert(IncantationAddons.Dividing, 'EX Consumables')
 table.insert(IncantationAddons.BulkUse, 'Tokens')
 
 AurinkoAddons.jen_wee = function(card, hand, instant, amount)
-	if card and ((card.ability or {}).set or '') == 'Planet' and not card.playing_card then
+	if card and not card.playing_card then
 		local twos = {}
 		for k, v in pairs(G.deck.cards) do
 			if v:get_id() == 2 then
@@ -87,6 +111,13 @@ AurinkoAddons.jen_wee = function(card, hand, instant, amount)
 			end
 		end
 	end
+end
+
+G.FUNCS.isomeganumenabled = function(e)
+	if Big and Big.arrow then
+		return true
+	end
+	return false
 end
 
 --{string = '', colours = {G.C.WHITE}, rotate = 1,shadow = true, bump = true,float=true, scale = 0.9, pop_in = 1.5/G.SPEEDFACTOR, pop_in_rate = 1.5*G.SPEEDFACTOR}
@@ -525,6 +556,11 @@ function Game:update(dt)
 			self.C.jen_RGB = {0,0,0,1}
 			self.C.jen_RGB_HUE = 0
 		end
+		
+		if not self.C.almanac then
+			self.C.almanac = {0,0,1,1}
+			G.ARGS.LOC_COLOURS.almanac = {0,0,1,1}
+		end
 
 		local r, g, b = jenRGB(self.C.jen_RGB_HUE, 0.5, 1, 1.5, 1.5, 1.5, 1)
 
@@ -533,7 +569,7 @@ function Game:update(dt)
 		self.C.jen_RGB[2] = b
 
 		self.C.jen_RGB_HUE = (self.C.jen_RGB_HUE + 0.5) % 360
-		G.ARGS.LOC_COLOURS['jen_RGB'] = self.C.jen_RGB
+		G.ARGS.LOC_COLOURS.jen_RGB = self.C.jen_RGB
 		
 	end
 end
@@ -869,16 +905,20 @@ SMODS.Edition({
         name = "Wee",
         label = "Wee",
         text = {
-			"{C:red,E:1,s:1.2}Rare Edition{}",
-			" ",
+			"{C:inactive}==On Jokers=={}",
             "Values of card {C:attention}increase by 8%{}",
             'whenever a {C:attention}2{} scores',
 			'{C:inactive}(If possible){}',
 			' ',
+			"{C:inactive}==On Playing Cards=={}",
+            "{C:chips}Extra chips{} on card increases by",
+			"{X:attention,C:white}3x{} the card's rank when scored",
+			'{C:inactive}(Rankless cards will add a flat +25){}',
+			' ',
 			"{C:inactive,E:1,s:0.7}Haha, look; it's tiny!{}"
         }
     },
-    shader = 'wee',
+    shader = false,
     discovered = true,
     unlocked = true,
     config = {twos_scored = 0},
@@ -888,8 +928,8 @@ SMODS.Edition({
 		vol = 0.5
 	},
     in_shop = true,
-    weight = 2,
-    extra_cost = 15,
+    weight = 4,
+    extra_cost = 8,
     apply_to_float = false,
 	get_weight = function(self)
         return G.GAME.edition_rate * self.weight
@@ -971,7 +1011,7 @@ SMODS.Edition({
         text = {
 			"{C:red,E:1,s:1.2}Rare Edition{}",
 			" ",
-			'Creates {C:attention}#1# {C:cry_code}Code{} cards when dissolved',
+			'Creates {C:attention}#1# {C:cry_code}Code{} cards when destroyed/sold',
 			'{C:inactive}(Does not require room, but may overflow){}',
 			'{C:dark_edition,s:0.7,E:2}Shader by : knockback1{}'
         }
@@ -1004,8 +1044,9 @@ SMODS.Edition({
         label = "Diplopia",
         text = {
 			'Retrigger this card {C:attention}#1#{} time(s)',
-			'{C:attention}Resists{} being dissolved {C:attention}once{}, after which',
+			'{C:attention}Resists{} being destroyed/sold {C:attention}once{}, after which',
 			'this edition is then removed from the card',
+			'{C:inactive}(Selling will still give money){}',
 			"{C:inactive}I'm... seeing... double...!{}",
 			'{C:dark_edition,s:0.7,E:2}Shader by : knockback1{}'
         }
@@ -1039,8 +1080,8 @@ SMODS.Edition({
         text = {
             "{C:chips}+#1#{} Chips",
             "{C:red}+#2#{} Mult",
-			"{C:money}Sell value{} is {X:green,C:white}3x{} the {C:attention}buy value{}",
-			"{C:money}Sell value{} is always at least {C:money}$6{} minimum",
+			'Can be {C:money}sold{} for {C:attention}three times{} its cost {C:inactive}(+200% profit){}',
+			'Minimum sell price is always at least {C:money}$6 {C:inactive}(+500% minimum profit){}',
 			'{C:dark_edition,s:0.7,E:2}Shader by : knockback1{}'
         }
     },
@@ -1349,7 +1390,7 @@ SMODS.Edition({
     discovered = true,
     unlocked = true,
     shader = 'dithered',
-    config = {chips = -50, mult = 33},
+    config = {chips = -25, mult = 33},
 	sound = {
 		sound = 'jen_e_dithered',
 		per = 1,
@@ -1378,7 +1419,7 @@ SMODS.Edition({
     discovered = true,
     unlocked = true,
     shader = 'sharpened',
-    config = {chips = 333, mult = -25},
+    config = {chips = 333, mult = -5},
 	sound = {
 		sound = 'jen_e_sharpened',
 		per = 1.2,
@@ -1537,7 +1578,7 @@ SMODS.Edition({
 	sound = {
 		sound = 'jen_e_moire',
 		per = 1,
-		vol = 0.4
+		vol = 0.7
 	},
     in_shop = true,
     weight = 0.01,
@@ -1550,17 +1591,23 @@ SMODS.Edition({
 
 local cs = Card.calculate_seal
 function Card:calculate_seal(context)
-	cs(self, context)
-	if context.repetition and ((self.ability or {}).set or 'Joker') ~= 'Joker' then
-		if self.edition then
-			if self.edition.retriggers then
-				return {
-					message = localize('k_again_ex'),
-					repetitions = self.edition.retriggers,
-					card = self
-				}
+	local tbl = cs(self, context)
+	if tbl then
+		if context.repetition and ((self.ability or {}).set or 'Joker') ~= 'Joker' then
+			if self.edition then
+				if self.edition.retriggers then
+					tbl.repetitions = (tbl.repetitions or 0) + self.edition.retriggers
+					tbl.message = tbl.message or localize('k_again_ex')
+					tbl.card = tbl.card or self
+					return {
+						message = localize('k_again_ex'),
+						repetitions = self.edition.retriggers,
+						card = self
+					}
+				end
 			end
 		end
+		return tbl
 	end
 end
 
@@ -1635,6 +1682,8 @@ local atlases = {
 	'paragon',
 	'jimbo',
 	'betmma',
+	'watto',
+	'apollo',
 	'areyoufrightenedofthismodyet'
 }
 
@@ -1779,7 +1828,8 @@ SMODS.Enhancement {
 	loc_txt = {
 		name = 'Multichip Card',
 		text = {
-			'{X:chips,C:white}x#1#{} Chips'
+			'{X:chips,C:white}x#1#{} Chips',
+			'{C:cry_exotic,s:0.6,E:1}Power Card{}'
 		}
 	},
 	config = {Xchips = 1.5},
@@ -1788,7 +1838,7 @@ SMODS.Enhancement {
 	discovered = true,
 	atlas = 'jenenhance',
     loc_vars = function(self, info_queue, center)
-        return {vars = {center.ability.Xchips}}
+        return {vars = {((center or {}).ability or {}).Xchips or 1.5}}
     end
 }
 
@@ -1797,7 +1847,8 @@ SMODS.Enhancement {
 	loc_txt = {
 		name = 'Powerchip Card',
 		text = {
-			'{X:chips,C:dark_edition}^#1#{} Chips'
+			'{X:chips,C:dark_edition}^#1#{} Chips',
+			'{C:cry_exotic,s:0.6,E:1}Power Card{}'
 		}
 	},
 	config = {Echips = 1.09},
@@ -1806,7 +1857,7 @@ SMODS.Enhancement {
 	discovered = true,
 	atlas = 'jenenhance',
     loc_vars = function(self, info_queue, center)
-        return {vars = {center.ability.Echips}}
+        return {vars = {((center or {}).ability or {}).Echips or 1.09}}
     end
 }
 
@@ -1815,7 +1866,8 @@ SMODS.Enhancement {
 	loc_txt = {
 		name = 'Multimult Card',
 		text = {
-			'{X:mult,C:white}x#1#{} Mult'
+			'{X:mult,C:white}x#1#{} Mult',
+			'{C:cry_exotic,s:0.6,E:1}Power Card{}'
 		}
 	},
 	config = {Xmult = 2},
@@ -1824,7 +1876,7 @@ SMODS.Enhancement {
 	discovered = true,
 	atlas = 'jenenhance',
     loc_vars = function(self, info_queue, center)
-        return {vars = {center.ability.Xmult}}
+        return {vars = {((center or {}).ability or {}).Xmult or 2}}
     end
 }
 
@@ -1833,7 +1885,8 @@ SMODS.Enhancement {
 	loc_txt = {
 		name = 'Powermult Card',
 		text = {
-			'{X:mult,C:dark_edition}^#1#{} Mult'
+			'{X:mult,C:dark_edition}^#1#{} Mult',
+			'{C:cry_exotic,s:0.6,E:1}Power Card{}'
 		}
 	},
 	config = {Emult = 1.13},
@@ -1842,7 +1895,7 @@ SMODS.Enhancement {
 	discovered = true,
 	atlas = 'jenenhance',
     loc_vars = function(self, info_queue, center)
-        return {vars = {center.ability.Emult}}
+        return {vars = {((center or {}).ability or {}).Emult or 1.13}}
     end
 }
 
@@ -1854,7 +1907,8 @@ SMODS.Enhancement {
 			'{X:chips,C:white}x#1#{} Chips',
 			'{X:mult,C:white}x#2#{} Mult',
 			'{X:chips,C:dark_edition}^#3#{} Chips',
-			'{X:mult,C:dark_edition}^#4#{} Mult'
+			'{X:mult,C:dark_edition}^#4#{} Mult',
+			'{C:cry_exotic,s:0.6,E:1}Power Card{}'
 		}
 	},
 	config = {Xchips = 1.25, Xmult = 1.5, Echips = 1.08, Emult = 1.11},
@@ -1863,7 +1917,7 @@ SMODS.Enhancement {
 	discovered = true,
 	atlas = 'jenenhance',
     loc_vars = function(self, info_queue, center)
-        return {vars = {center.ability.Xchips, center.ability.Xmult, center.ability.Echips, center.ability.Emult}}
+        return {vars = {((center or {}).ability or {}).Xchips or 1.25, ((center or {}).ability or {}).Xmult or 1.25, ((center or {}).ability or {}).Echips or 1.08, ((center or {}).ability or {}).Emult or 1.11}}
     end
 }
 
@@ -2044,7 +2098,8 @@ SMODS.Enhancement {
 	loc_txt = {
 		name = 'Handy Card',
 		text = {
-			'{C:blue}+1{} hand this round when scored'
+			'{C:blue}+1{} hand this round when scored',
+			'{C:cry_exotic,s:0.6,E:1}Power Card{}'
 		}
 	},
 	pos = { x = 1, y = 1 },
@@ -2063,7 +2118,8 @@ SMODS.Enhancement {
 	loc_txt = {
 		name = 'Tossy Card',
 		text = {
-			'{C:red}+1{} discard this round when scored'
+			'{C:red}+1{} discard this round when scored',
+			'{C:cry_exotic,s:0.6,E:1}Power Card{}'
 		}
 	},
 	pos = { x = 3, y = 1 },
@@ -2441,6 +2497,33 @@ SMODS.Joker {
 	end
 }
 
+SMODS.Joker {
+	key = 'apollo',
+	loc_txt = {
+		name = 'Apollo',
+		text = {
+			'{C:red,E:1}EX{} versions of consumables',
+			'appear {C:attention}#1#x as often{} than normal',
+			'{C:dark_edition,s:0.7,E:2}Face art by : raidoesthings{}',
+		}
+	},
+	config = {EXchance_amplifier = 3},
+	pos = { x = 0, y = 0 },
+	soul_pos = { x = 1, y = 0 },
+	cost = 50,
+	rarity = 'cry_exotic',
+	unlocked = true,
+	discovered = true,
+	blueprint_compat = true,
+	eternal_compat = true,
+	perishable_compat = false,
+	immune_to_chemach = true,
+	atlas = 'jenapollo',
+    loc_vars = function(self, info_queue, center)
+        return {vars = {center.ability.EXchance_amplifier}}
+    end,
+}
+
 local random_editions = {
 	'foil',
 	'holo',
@@ -2456,6 +2539,7 @@ local random_editions = {
 	'jen_sepia',
 	'jen_reversed',
 	'jen_diplopia',
+	'jen_wee',
 	'cry_mosaic',
 	'cry_oversat',
 	'cry_astral',
@@ -4228,6 +4312,50 @@ SMODS.Joker {
 }
 
 SMODS.Joker {
+	key = 'watto',
+	loc_txt = {
+		name = 'Watto',
+		text = {
+			'{C:money}Selling{} a card adds a {C:attention}hundredth{}',
+			'of its value to this Joker\'s {X:jen_RGB,C:white,s:1.5}^^Mult{}',
+			'{C:inactive}(Currently {X:jen_RGB,C:white,s:1.5}^^#1#{C:inactive}){}',
+			' ',
+			'{C:inactive,s:2,E:1}That\'s a dub.{}'
+		}
+	},
+	config = {tetmult = 0},
+	pos = { x = 0, y = 0 },
+	soul_pos = { x = 1, y = 0 },
+	cost = 50,
+	rarity = 'cry_exotic',
+	unlocked = true,
+	discovered = true,
+	blueprint_compat = true,
+	eternal_compat = true,
+	perishable_compat = false,
+	atlas = 'jenwatto',
+    loc_vars = function(self, info_queue, center)
+        return {vars = {center.ability.tetmult + 1}}
+    end,
+    calculate = function(self, card, context)
+		if context.selling_card and context.card ~= card then
+			card.ability.tetmult = card.ability.tetmult + (context.card.sell_cost/100)
+			card_eval_status_text(card, 'extra', nil, nil, nil, {message = '^^' .. number_format(card.ability.tetmult + 1) .. ' Mult', colour = G.C.FILTER})
+		elseif context.cardarea == G.jokers and not context.before and not context.after and context.scoring_name then
+			local num = 1 + (card.ability.tetmult)
+			if num > 1 then
+				return {
+					message = '^^' .. num .. ' Mult',
+					colour = G.C.jen_RGB,
+					EEmult_mod = num,
+					card = card
+				}
+			end
+		end
+	end
+}
+
+SMODS.Joker {
 	key = 'survivor',
 	loc_txt = {
 		name = 'The Survivor',
@@ -4643,7 +4771,6 @@ local function totalownedcards()
 	return amnt
 end
 
---[[
 SMODS.Joker {
 	key = 'artificer',
 	loc_txt = {
@@ -4666,29 +4793,6 @@ SMODS.Joker {
 	perishable_compat = false,
 	atlas = 'jenartificer',
 	abilitycard = 'c_jen_artificer_c',
-    loc_vars = function(self, info_queue, center)
-        return {vars = {totalownedcards()}}
-    end,
-	add_to_deck = function(self, card, from_debuff)
-		card.ability.lvmod = totalownedcards()
-		lvupallhands(card.ability.lvmod, card)
-	end,
-	remove_from_deck = function(self, card, from_debuff)
-		if not card.ability.lvmod then card.ability.lvmod = 0 end
-		if card.ability.lvmod > 0 then
-			lvupallhands(-card.ability.lvmod, card)
-		end
-	end,
-	calculate = function(self, card, context)
-        if noretriggers(context) and not context.blueprint then
-			if not card.ability.lvmod then card.ability.lvmod = 0 end
-			local amnt = totalownedcards()
-			if amnt ~= card.ability.lvmod then
-				lvupallhands(amnt - card.ability.lvmod, card, true)
-				card.ability.lvmod = amnt
-			end
-        end
-	end
 }
 
 SMODS.Consumable {
@@ -4700,15 +4804,14 @@ SMODS.Consumable {
 			"{C:inactive}(R = destroyed card's rank)",
 			'{C:hearts}Hearts{} : All hands receive {X:mult,C:white}x(1 + (R/10)){} Mult',
 			'{C:spades}Spades{} : All hands receive {X:chips,C:white}x(1 + (R/20)){} Chips',
-			'{C:diamonds}Diamonds{} : Create {C:attention}R {C:tarot}Tarots{}/{C:spectral}Spectrals{}/{C:planet}Planets {C:inactive}(does not require room){}',
-			'{C:clubs}Clubs{} : {C:planet}Level up{} all hands {C:attention}R{} times',
+			'{C:diamonds}Diamonds{} : Create {C:attention}R {C:tarot}Tarot(s){}/{C:spectral}Spectral(s){}/{C:planet}Planet(s) {C:inactive}(does not require room){}',
+			'{C:clubs}Clubs{} : {C:planet}Level up{} all hands {C:attention}R{} time(s)',
 			'{C:jen_RGB}Wilds{} : {C:purple}Applies all of the above{}',
-			'{X:inactive}Stones{} : All other {C:attention}playing cards{} gain {C:chips}+500{} bonus chips',
+			'{X:inactive}Stones/Rankless{} : All other {C:attention}playing cards{} gain {C:chips}+500{} bonus chips',
 			' ',
-			'{X:dark_edition,C:white}Negative{} {X:dark_edition,C:white}Ability:{} Applies efects {C:attention}without destroying{} selected cards'
+			'{X:dark_edition,C:white}Negative{} {X:dark_edition,C:white}Ability:{} Applies effects {C:attention}without destroying{} selected cards'
 		}
 	},
-	config = {},
 	set = 'jen_jokerability',
 	pos = { x = 0, y = 0 },
 	soul_pos = { x = 1, y = 0 },
@@ -4720,18 +4823,76 @@ SMODS.Consumable {
 	soul_rate = 0,
 	atlas = 'jenartificer_c',
 	can_use = function(self, card)
-		return ((card.edition or {}).negative or #G.hand.highlighted > 0) and (#G.hand.highlighted < #G.hand.cards) and abletouseabilities()
+		return (#G.hand.highlighted > 0) and abletouseabilities()
 	end,
 	keep_on_use = function(self, card)
 		return #SMODS.find_card('j_jen_artificer') > 0 and not (card.edition or {}).negative
 	end,
 	use = function(self, card, area, copier)
+		local isneg = card.edition and card.edition.negative
 		if #G.hand.highlighted > 0 then
-			play_sound('coin2')
-			card:juice_up(0.3, 0.4)
 			for k, v in pairs(G.hand.highlighted) do
-				if v ~= card then
-					v:sell_card()
+				if v:norank() then
+					for a, b in pairs(G.hand.cards) do
+						if not b.highlighted or (card.edition or {}).negative then
+							b.ability.perma_bonus = (b.ability.perma_bonus or 0) + 5e3
+							card_eval_status_text(v, 'extra', nil, nil, nil, {message = '+' .. v.ability.perma_bonus, colour = G.C.CHIPS})
+						end
+					end
+					for a, b in pairs(G.deck.cards) do
+						b.ability.perma_bonus = (b.ability.perma_bonus or 0) + 5e3
+						if a == 1 then
+							card_eval_status_text(b, 'extra', nil, nil, nil, {message = '+', colour = G.C.CHIPS})
+						end
+					end
+				else
+					local rank = v:get_id()
+					if rank > 0 then
+						if v:is_suit('Clubs') then
+							lvupallhands(rank, v)
+						end
+						if v:is_suit('Hearts') or v:is_suit('Spades') then
+							update_hand_text({sound = 'button', volume = 0.7, pitch = 0.8, delay = 0.3}, {handname=localize('k_all_hands'),chips = '...', mult = '...', level=''})
+						end
+						if v:is_suit('Spades') then
+							for k, v in pairs(G.GAME.hands) do
+								G.GAME.hands[k].chips = G.GAME.hands[k].chips * (1 + (rank/20))
+							end
+							update_hand_text({sound = 'button', volume = 0.7, pitch = 0.8, delay = 2}, {chips = 'x' .. number_format(1 + (rank/20))})
+						end
+						if v:is_suit('Hearts') then
+							for k, v in pairs(G.GAME.hands) do
+								G.GAME.hands[k].mult = G.GAME.hands[k].mult * (1 + (rank/10))
+							end
+							update_hand_text({sound = 'button', volume = 0.7, pitch = 0.8, delay = 2}, {mult = 'x' .. number_format(1 + (rank/10))})
+						end
+						if v:is_suit('Hearts') or v:is_suit('Spades') then
+							update_hand_text({sound = 'button', volume = 0.7, pitch = 1.1, delay = 2}, {mult = 0, chips = 0, handname = '', level = ''})
+						end
+						if v:is_suit('Diamonds') then
+							for i = 1, rank do
+								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+									if G.consumeables.config.card_limit > #G.consumeables.cards then
+										play_sound('button', 0.5)
+										local card2 = create_card(pseudorandom_element(random_consumabletypes, pseudoseed("pyrotechnics")), G.consumeables, nil, nil, nil, nil, nil, 'pyrotechnics')
+										if card.edition then
+											card2:set_edition(card.edition, true)
+										end
+										card2:add_to_deck()
+										G.consumeables:emplace(card2)
+										card:juice_up(0.3, 0.5)
+									end
+									return true
+								end }))
+							end
+						end
+						if not isneg then
+							G.E_MANAGER:add_event(Event({trigger = 'after', func = function()
+								v:start_dissolve()
+								return true
+							end }))
+						end
+					end
 				end
 			end
 			if #G.hand.cards - #G.hand.highlighted < G.hand.config.card_limit and #G.deck.cards > 0 then
@@ -4740,12 +4901,8 @@ SMODS.Consumable {
 				end
 			end
 		end
-		if (card.edition or {}).negative then
-			ease_dollars(5)
-		end
 	end
 }
-]]
 
 SMODS.Joker {
 	key = 'rot',
@@ -4777,6 +4934,51 @@ SMODS.Joker {
 			local rot = copy_card(card)
 			rot:add_to_deck()
 			G.jokers:emplace(rot)
+		end
+	end
+}
+
+SMODS.Joker {
+	key = 'jimbo',
+	loc_txt = {
+		name = 'Jimbo',
+		text = {
+			'{C:mult}+444,444,444{}, {X:mult,C:white}x44,444,444{},',
+			'{X:mult,C:dark_edition}^4,444,444{}, {X:jen_RGB,C:white}^^444,444{},',
+			'{X:black,C:red}^^^44,444{} and {X:black,C:purple}^^^^4,444{} Mult',
+			'{C:inactive,s:0.7,E:1}Hey, buddy! I figured I might as well hop in and have fun!{}'
+		}
+	},
+	config = {EXchance_amplifier = 3},
+	pos = { x = 0, y = 0 },
+	soul_pos = { x = 1, y = 0 },
+	cost = 888888,
+	rarity = 6,
+	no_doe = true,
+	set_card_type_badge = transcendent,
+	unlocked = true,
+	discovered = true,
+	blueprint_compat = true,
+	eternal_compat = true,
+	perishable_compat = false,
+	immune_to_chemach = true,
+	debuff_immune = true,
+	atlas = 'jenjimbo',
+    calculate = function(self, card, context)
+		if context.cardarea == G.jokers and not context.before and not context.after and context.scoring_name then
+			card_eval_status_text(card, 'extra', nil, nil, nil, {message = 'Hee-hee!', colour = G.C.CHIPS})
+			card_eval_status_text(card, 'extra', nil, nil, nil, {message = 'Hoo-hoo!', colour = G.C.MULT})
+			return {
+				message = 'Haa-haa!',
+				mult_mod = 444444444,
+				Xmult_mod = 44444444,
+				Emult_mod = 4444444,
+				EEmult_mod = 444444,
+				EEEmult_mod = 44444,
+				hypermult_mod = {4, 4444},
+				colour = G.C.FILTER,
+				card = card
+			}
 		end
 	end
 }
@@ -7324,7 +7526,7 @@ local suitreversetarots = {
 	},
 	{
 		b = 'world',
-		n = 'The Void',
+		n = 'Desolate',
 		s = 'Spades',
 		p = { x = 8, y = 0 }
 	}
@@ -7745,7 +7947,7 @@ SMODS.Consumable {
 		for k, v in ipairs(objects) do
 			G.E_MANAGER:add_event(Event({delay = 0.2, timer = 'REAL', func = function()
 				play_sound('card1', 0.85)
-				v:set_ability(G.P_CENTERS[pseudorandom_element(G.P_CENTER_POOLS.Consumeables, pseudoseed('jen_mischief')).key], true, nil)
+				v:set_ability(get_random_consumable('jen_mischief'), true, nil)
 				v:juice_up(0.3, 0.3)
 				v:flip()
 				return true
@@ -7786,7 +7988,7 @@ SMODS.Consumable {
 		for k, v in ipairs(objects) do
 			G.E_MANAGER:add_event(Event({delay = 0.2, timer = (number < 4 and 'REAL' or 'TOTAL'), func = function()
 				play_sound('card1', 0.85)
-				v:set_ability(G.P_CENTERS[pseudorandom_element(G.P_CENTER_POOLS.Consumeables, pseudoseed('jen_mischief')).key], true, nil)
+				v:set_ability(get_random_consumable('jen_mischief'), true, nil)
 				v:juice_up(0.3, 0.3)
 				v:flip()
 				return true
@@ -8481,6 +8683,303 @@ SMODS.Consumable {
 	end
 }
 
+local power_enhancements = {
+	'xmult',
+	'emult',
+	'xchip',
+	'echip',
+	'power',
+	'tossy',
+	'handy'
+}
+
+SMODS.Consumable {
+	key = 'universe',
+	loc_txt = {
+		name = 'The Universe',
+		text = {
+			'Enhance up to {C:attention}#1#{} selected card(s)',
+			'into a random {C:cry_exotic,E:1}Power{} card',
+		}
+	},
+	config = {max_highlighted = 2},
+	set = 'Tarot',
+	pos = { x = 0, y = 0 },
+	cost = 4,
+	unlocked = true,
+	discovered = true,
+	atlas = 'jenacc',
+    loc_vars = function(self, info_queue, center)
+        return {vars = {((center or {}).ability or {}).max_highlighted or 2}}
+    end,
+	can_use = function(self, card)
+		return abletouseconsumables() and #G.hand.highlighted <= card.ability.max_highlighted and #G.hand.highlighted > 0
+	end,
+	use = function(self, card, area, copier)
+		if #G.hand.highlighted > 0 then
+			G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+				play_sound('tarot1')
+				card:juice_up(0.3, 0.5)
+			return true end }))
+			for i=1, #G.hand.highlighted do
+				local percent = 1.15 - (i-0.999)/(#G.hand.highlighted-0.998)*0.3
+				G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() G.hand.highlighted[i]:flip();play_sound('card1', percent);G.hand.highlighted[i]:juice_up(0.3, 0.3);return true end }))
+			end
+			delay(0.2)
+			for i=1, #G.hand.highlighted do
+				local CARD = G.hand.highlighted[i]
+				local percent = 0.85 + (i-0.999)/(#G.hand.highlighted-0.998)*0.3
+				G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() G.hand:remove_from_highlighted(CARD);CARD:flip();CARD:set_ability(G.P_CENTERS['m_jen_' .. pseudorandom_element(power_enhancements, pseudoseed("universe_random"))], true, nil);play_sound('tarot2', percent);CARD:juice_up(0.3, 0.3);return true end }))
+			end
+		end
+	end
+}
+
+SMODS.Consumable {
+	key = 'void',
+	loc_txt = {
+		name = 'The Void',
+		text = {
+			'{C:attention}Remove{} enhancements from',
+			'up to {C:attention}#1#{} selected card(s),',
+			'and receive {C:money}$#2#{} per enhancement removed'
+		}
+	},
+	config = {max_highlighted = 5, payout = 6},
+	set = 'Tarot',
+	pos = { x = 1, y = 0 },
+	cost = 5,
+	unlocked = true,
+	discovered = true,
+	atlas = 'jenacc',
+    loc_vars = function(self, info_queue, center)
+        return {vars = {((center or {}).ability or {}).max_highlighted or 5,((center or {}).ability or {}).payout or 6}}
+    end,
+	can_use = function(self, card)
+		return abletouseconsumables() and #G.hand.highlighted <= card.ability.max_highlighted and #G.hand.highlighted > 0
+	end,
+	use = function(self, card, area, copier)
+		if #G.hand.highlighted > 0 then
+			G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+				play_sound('tarot1')
+				card:juice_up(0.3, 0.5)
+			return true end }))
+			for i=1, #G.hand.highlighted do
+				local CARD = G.hand.highlighted[i]
+				local percent = 1.15 - (i-0.999)/(#G.hand.highlighted-0.998)*0.3
+				if CARD.config.center.key == 'c_base' then
+					G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.5,func = function() card_status_text(CARD, 'Not enhanced!', nil, 0.05*CARD.T.h, G.C.RED, nil, nil, nil, nil, 'bm', 'cancel');return true end }))
+				else
+					CARD.beingvoided = true
+					G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() CARD:flip();play_sound('card1', percent);CARD:juice_up(0.3, 0.3);return true end }))
+				end
+			end
+			delay(0.2)
+			for i=1, #G.hand.highlighted do
+				local CARD = G.hand.highlighted[i]
+				local percent = 0.85 + (i-0.999)/(#G.hand.highlighted-0.998)*0.3
+				if CARD.beingvoided then
+					CARD.beingvoided = nil
+					G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() G.hand:remove_from_highlighted(CARD);CARD:flip();CARD:set_ability(G.P_CENTERS.c_base, true, nil);play_sound('tarot2', percent);CARD:juice_up(0.3, 0.3);ease_dollars(card.ability.payout);return true end }))
+				else
+					G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() play_sound('card1', percent);G.hand:remove_from_highlighted(CARD);return true end }))
+				end
+			end
+		end
+	end
+}
+
+SMODS.Consumable {
+	key = 'squirrel',
+	loc_txt = {
+		name = 'The Happy Squirrel',
+		text = {
+			'Apply {C:dark_edition}Wee{} on',
+			'up to {C:attention}#1#{} card(s)'
+		}
+	},
+	config = {max_highlighted = 1},
+	set = 'Tarot',
+	pos = { x = 2, y = 0 },
+	cost = 3,
+	unlocked = true,
+	discovered = true,
+	atlas = 'jenacc',
+    loc_vars = function(self, info_queue, center)
+        return {vars = {((center or {}).ability or {}).max_highlighted or 1}}
+    end,
+	can_use = function(self, card)
+		return abletouseconsumables() and #G.hand.highlighted <= card.ability.max_highlighted and #G.hand.highlighted > 0
+	end,
+	use = function(self, card, area, copier)
+		if #G.hand.highlighted > 0 then
+			for k, v in pairs(G.hand.highlighted) do
+				v:set_edition({jen_wee = true})
+				G.hand:remove_from_highlighted(v)
+			end
+		end
+	end
+}
+
+SMODS.Consumable {
+	key = 'artist',
+	loc_txt = {
+		name = 'The Artist',
+		text = {
+			'Copy the {C:attention}enhancement{} and',
+			'{C:dark_edition}edition{} of {C:attention}one{}',
+			'selected card and apply them to',
+			'{C:attention}#1#{} other card(s) randomly'
+		}
+	},
+	config = {targets = 4},
+	set = 'Tarot',
+	pos = { x = 3, y = 0 },
+	cost = 3,
+	unlocked = true,
+	discovered = true,
+	atlas = 'jenacc',
+    loc_vars = function(self, info_queue, center)
+        return {vars = {((center or {}).ability or {}).targets or 4}}
+    end,
+	can_use = function(self, card)
+		return abletouseconsumables() and #G.hand.highlighted == 1 and card.ability.targets >= 1
+	end,
+	use = function(self, card, area, copier)
+		local source = G.hand.highlighted[1]
+		local max_targets = math.min(card.ability.targets, #G.hand.cards - 1)
+		local tries = 200
+		if source and max_targets > 0 then
+			local valid = source.edition or source.config.center.key ~= 'c_base'
+			if not valid then
+				card_status_text(CARD, 'Nothing to copy!', nil, 0.05*CARD.T.h, G.C.RED, nil, 0.6, nil, nil, 'bm', 'cancel')
+			else
+				G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+					play_sound('tarot1')
+					card:juice_up(0.3, 0.5)
+				return true end }))
+				for i=1, #G.hand.cards do
+					local CARD = G.hand.cards[i]
+					local percent = 1.15 - (i-0.999)/(#G.hand.cards-0.998)*0.3
+					if CARD ~= source then
+						G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() CARD:flip();play_sound('card1', percent);CARD:juice_up(0.3, 0.3);return true end }))
+					end
+				end
+				local selections = {}
+				local selection = 'n/a'
+				while max_targets > 0 and tries > 0 do
+					tries = tries - 1
+					selection = pseudorandom_element(G.hand.cards, pseudoseed("artist_selection"))
+					if not selection.alreadychosenbyartist and selection ~= source then
+						selection.alreadychosenbyartist = true
+						table.insert(selections, selection)
+						max_targets = max_targets - 1
+					end
+				end
+				delay(1)
+				if #selections > 0 then
+					for i = 1, #selections do
+						local CARD = selections[i]
+						G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.3,func = function()
+							CARD.highlighted = true
+							CARD.alreadychosenbyartist = nil
+							if source.config.center.key ~= 'c_base' then
+								CARD:set_ability(G.P_CENTERS[source.config.center.key], true, nil)
+							end
+							if source.edition then
+								CARD:set_edition(source.edition, true, true)
+							end
+							play_sound('button')
+							CARD:juice_up(0.3, 0.3)
+						return true end }))
+					end
+				end
+				delay(1)
+				for i=1, #G.hand.cards do
+					local CARD = G.hand.cards[i]
+					local percent = 0.85 + (i-0.999)/(#G.hand.cards-0.998)*0.3
+					if CARD ~= source then
+						G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() G.hand:remove_from_highlighted(CARD);CARD:flip();play_sound('tarot2', percent);CARD:juice_up(0.3, 0.3);return true end }))
+					else
+						G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() play_sound('card1', percent);G.hand:remove_from_highlighted(CARD);return true end }))
+					end
+				end
+			end
+		else
+			card_status_text(CARD, 'No targets!', nil, 0.05*CARD.T.h, G.C.RED, nil, 0.6, nil, nil, 'bm', 'cancel')
+		end
+	end
+}
+
+local jokerinatarot_blurbs = {
+	"Hey! Pick me!",
+	"You wouldn't say no to a free negative me, would you?",
+	"Sometimes, an extra four mult goes a long way!",
+	"I won't take up space, I promise!",
+	"Don't ask how I ended up in a tarot!",
+	"Hee-hee, hoo-hoo!",
+	"Who knew even fortunes could be a circus act?",
+	"Looks like the joke is on the crystal globe!",
+	"It's a little cramped in this tarot...!",
+	"Ouch, I think the joke is on me!",
+	"Looks like the joke is on you!",
+	"I'm not just a clown; I'm the whole circus!",
+	"Seems a little suspicious for a jolly old fella like me to be in this card...",
+	"I can't help if I'm still in this silly old card, break me out!",
+	"Let me tell you, you'd love the show going on in this tarot!",
+	"I'd give you more tickets to JimCon, but I'm fresh out.",
+	"I've heard of a round buffoon that lives in a pretty funky town...",
+	"I can't give four mult if I'm still in this card!",
+	"I'm rooting for you! Even if it means I'll never get out of this card...",
+	"Who knew I'd have access to a great show? That show being you!",
+	"The stakes are only gonna rise here!",
+	"Juggling is one of my favourite passtimes!",
+	"I wonder what's the deal with pairs?",
+	"You don't need to understand math to enjoy watching the digits climb!",
+	"M!"
+}
+
+SMODS.Consumable {
+	key = 'jokerinatarot',
+	loc_txt = {
+		name = 'Joker-in-a-Tarot',
+		text = {
+			"{C:inactive,E:1}#1#{}"
+		}
+	},
+	config = {},
+	set = 'Tarot',
+	pos = { x = 0, y = 1 },
+	cost = 3,
+	unlocked = true,
+	discovered = true,
+	atlas = 'jenacc',
+    loc_vars = function(self, info_queue, center)
+        return {vars = {jokerinatarot_blurbs[math.random(#jokerinatarot_blurbs)]}}
+    end,
+	can_use = function(self, card)
+		return abletouseconsumables()
+	end,
+	use = function(self, card, area, copier)
+		if pseudorandom('jokerinatarot_secret') <= 0.001 then
+			local card2 = create_card('Joker', G.jokers, nil, nil, nil, nil, 'j_jen_jimbo', 'jokerfromatarot')
+			card2:add_to_deck()
+			G.jokers:emplace(card2)
+			play_sound_q('excard')
+		else
+			local card2 = create_card('Joker', G.jokers, nil, nil, nil, nil, 'j_joker', 'jokerfromatarot')
+			card2:add_to_deck()
+			card2:set_edition({negative = true}, true)
+			card2.base_cost = 1
+			card2.extra_cost = 0
+			card2.cost = 1
+			card2.sell_cost = 1
+			card2.sell_cost_label = card2.facing == 'back' and '?' or card2.sell_cost
+			G.jokers:emplace(card2)
+		end
+	end
+}
+
 SMODS.Consumable {
 	key = 'moon',
 	loc_txt = {
@@ -8796,10 +9295,13 @@ for k, v in pairs(explanets) do
 		pos = { x = 0, y = v.y },
 		soul_pos = { x = 1, y = v.y },
 		cost = 15,
+		no_doe = true,
 		aurinko = true,
 		unlocked = true,
 		discovered = true,
+		soul_rate = 0,
 		atlas = 'jenexplanets',
+		hidden = true,
 		can_stack = true,
 		can_divide = true,
 		can_bulk_use = true,
@@ -8891,10 +9393,12 @@ end
 		pos = { x = 0, y = 0 },
 		soul_pos = { x = 1, y = 0 },
 		cost = 15,
-		aurinko = true,
+		soul_rate = 0,
+		no_doe = true,
 		unlocked = true,
 		discovered = true,
 		atlas = 'jenexplanets',
+		hidden = true,
 		can_stack = true,
 		can_divide = true,
 		can_bulk_use = true,
@@ -8994,8 +9498,11 @@ SMODS.Consumable {
 	pos = { x = 0, y = 0 },
 	soul_pos = { x = 1, y = 0 },
 	cost = 20,
+	soul_rate = 0,
 	unlocked = true,
 	discovered = true,
+	no_doe = true,
+	hidden = true,
 	atlas = 'jenexspectrals',
     loc_vars = function(self, info_queue, center)
         return {vars = {center.ability.extra.copies}}
@@ -9048,8 +9555,11 @@ SMODS.Consumable {
 	pos = { x = 0, y = 1 },
 	soul_pos = { x = 1, y = 1 },
 	cost = 20,
+	soul_rate = 0,
 	unlocked = true,
 	discovered = true,
+	no_doe = true,
+	hidden = true,
 	atlas = 'jenexspectrals',
 	can_use = function(self, card)
 		return abletouseconsumables() and (#((G.jokers or {}).highlighted or {}) + #((G.hand or {}).highlighted or {})) > 0
@@ -9081,8 +9591,11 @@ SMODS.Consumable {
 	pos = { x = 0, y = 2 },
 	soul_pos = { x = 1, y = 2 },
 	cost = 20,
+	soul_rate = 0,
 	unlocked = true,
 	discovered = true,
+	no_doe = true,
+	hidden = true,
 	atlas = 'jenexspectrals',
     loc_vars = function(self, info_queue, center)
         return {vars = {center.ability.extra.copies}}
@@ -9161,8 +9674,11 @@ for k, v in pairs(exsealcards) do
 		pos = { x = 0, y = v.y },
 		soul_pos = { x = 1, y = v.y },
 		cost = 20,
+		soul_rate = 0,
 		unlocked = true,
 		discovered = true,
+		no_doe = true,
+		hidden = true,
 		atlas = 'jenexspectrals',
 		can_use = function(self, card)
 			return abletouseconsumables()
@@ -9195,8 +9711,11 @@ SMODS.Consumable {
 	pos = { x = 0, y = 4 },
 	soul_pos = { x = 1, y = 4 },
 	cost = 100,
+	soul_rate = 0,
 	unlocked = true,
 	discovered = true,
+	no_doe = true,
+	hidden = true,
 	atlas = 'jenexspectrals',
 	can_use = function(self, card)
 		return abletouseconsumables() and #((G.jokers or {}).cards or {}) > 0
@@ -9224,8 +9743,11 @@ SMODS.Consumable {
 	pos = { x = 0, y = 5 },
 	soul_pos = { x = 1, y = 5 },
 	cost = 100,
+	soul_rate = 0,
 	unlocked = true,
 	discovered = true,
+	no_doe = true,
+	hidden = true,
 	atlas = 'jenexspectrals',
 	can_use = function(self, card)
 		return abletouseconsumables()
@@ -9255,8 +9777,11 @@ SMODS.Consumable {
 	pos = { x = 0, y = 6 },
 	soul_pos = { x = 1, y = 6 },
 	cost = 80,
+	soul_rate = 0,
 	unlocked = true,
 	discovered = true,
+	no_doe = true,
+	hidden = true,
 	atlas = 'jenexspectrals',
 	can_use = function(self, card)
 		return abletouseconsumables()
@@ -9283,8 +9808,11 @@ SMODS.Consumable {
 	pos = { x = 0, y = 7 },
 	soul_pos = { x = 1, y = 7 },
 	cost = 150,
+	soul_rate = 0,
 	unlocked = true,
 	discovered = true,
+	no_doe = true,
+	hidden = true,
 	atlas = 'jenexspectrals',
 	can_use = function(self, card)
 		return abletouseconsumables()
@@ -9323,17 +9851,322 @@ SMODS.Consumable {
 	end
 }
 
+SMODS.Consumable {
+	key = 'immolate_ex',
+	set = 'jen_exconsumable',
+	loc_txt = {
+		name = 'Immolate {C:dark_edition}EX{}',
+		text = {
+			'Select {C:attention}any number{} of playing cards to {C:red}destroy{},',
+			"For each destroyed card; {C:money}money{} is {C:attention}multiplied{} by {C:attention}R{},",
+			"all hands {C:planet}level up{} by {X:green,C:white}3x{C:attention}R{},",
+			"and increase Joker slots by {C:attention}R{}",
+			'{C:inactive}(R = card rank){}',
+			'{C:inactive}(Stones are treated as a 2){}'
+		}
+	},
+	pos = { x = 0, y = 8 },
+	soul_pos = { x = 1, y = 8 },
+	cost = 200,
+	soul_rate = 0,
+	unlocked = true,
+	discovered = true,
+	no_doe = true,
+	hidden = true,
+	atlas = 'jenexspectrals',
+	can_use = function(self, card)
+		return abletouseconsumables() and #((G.hand or {}).highlighted or {}) > 0
+	end,
+	use = function(self, card, area, copier)
+		if #G.hand.highlighted > 0 then
+			for k, v in pairs(G.hand.highlighted) do
+				local rank = v:norank() and 2 or v:get_id()
+				if rank >= 1 then
+					ease_dollars(math.min(1e308, G.GAME.dollars * rank - G.GAME.dollars))
+					G.E_MANAGER:add_event(Event({trigger = 'after', func = function()
+						v:juice_up(0.5, 0.5)
+						return true
+					end }))
+					delay(0.25)
+					lvupallhands(rank * 3, v, true)
+					delay(0.25)
+					G.jokers:change_size_absolute(rank)
+					delay(0.25)
+					G.E_MANAGER:add_event(Event({trigger = 'after', func = function()
+						v:start_dissolve()
+						return true
+					end }))
+				end
+			end
+		end
+	end
+}
+
+SMODS.Consumable {
+	key = 'incantation_ex',
+	set = 'jen_exconsumable',
+	loc_txt = {
+		name = 'Incantation {C:dark_edition}EX{}',
+		text = {
+			'Add a {C:attention}full set{} of cards {C:attention}2{} through {C:attention}10{}',
+			'to your deck, with {C:cry_exotic,E:1}Bloodfoil{} on {C:attention}odd ranks{} and {C:cry_exotic,E:1}Blood{} on {C:attention}even ranks{}'
+		}
+	},
+	pos = { x = 0, y = 9 },
+	soul_pos = { x = 1, y = 9 },
+	cost = 175,
+	soul_rate = 0,
+	unlocked = true,
+	discovered = true,
+	no_doe = true,
+	hidden = true,
+	atlas = 'jenexspectrals',
+	can_use = function(self, card)
+		return abletouseconsumables()
+	end,
+	use = function(self, card, area, copier)
+		createcardset('_2', nil, 'jen_blood', 1)
+		createcardset('_3', nil, 'jen_bloodfoil', 1)
+		createcardset('_4', nil, 'jen_blood', 1)
+		createcardset('_5', nil, 'jen_bloodfoil', 1)
+		createcardset('_6', nil, 'jen_blood', 1)
+		createcardset('_7', nil, 'jen_bloodfoil', 1)
+		createcardset('_8', nil, 'jen_blood', 1)
+		createcardset('_9', nil, 'jen_bloodfoil', 1)
+		createcardset('_T', nil, 'jen_blood', 1)
+	end,
+	bulk_use = function(self, card, area, copier, number)
+		createcardset('_2', nil, 'jen_blood', number)
+		createcardset('_3', nil, 'jen_bloodfoil', number)
+		createcardset('_4', nil, 'jen_blood', number)
+		createcardset('_5', nil, 'jen_bloodfoil', number)
+		createcardset('_6', nil, 'jen_blood', number)
+		createcardset('_7', nil, 'jen_bloodfoil', number)
+		createcardset('_8', nil, 'jen_blood', number)
+		createcardset('_9', nil, 'jen_bloodfoil', number)
+		createcardset('_T', nil, 'jen_blood', number)
+	end
+}
+
+SMODS.Consumable {
+	key = 'ouija_ex',
+	set = 'jen_exconsumable',
+	loc_txt = {
+		name = 'Ouija {C:dark_edition}EX{}',
+		text = {
+			'Select {C:attention}any number{} of cards,',
+			'all other cards whose rank',
+			'{C:attention}does not match any of the selected cards{}',
+			'will be removed and {C:money}sold{}',
+			'{C:inactive}(Removes Diplopia from card before selling){}'
+		}
+	},
+	pos = { x = 0, y = 11 },
+	soul_pos = { x = 1, y = 11 },
+	cost = 175,
+	soul_rate = 0,
+	unlocked = true,
+	discovered = true,
+	no_doe = true,
+	hidden = true,
+	atlas = 'jenexspectrals',
+	can_use = function(self, card)
+		return abletouseconsumables() and #((G.hand or {}).highlighted or {}) > 0
+	end,
+	use = function(self, card, area, copier)
+		if #G.hand.highlighted > 0 then
+			for k, v in pairs(G.hand.cards) do
+				local safe = false
+				if not v.highlighted then
+					for a, b in pairs(G.hand.highlighted) do
+						if b:get_id() == v:get_id() or (b:norank() and v:norank()) then
+							safe = true
+							break
+						end
+					end
+				end
+				if not safe and not v.highlighted then
+					if v.edition and v.edition.jen_diplopia then
+						v:set_edition(nil, true, true)
+					end
+					v:sell_card()
+				end
+			end
+			for k, v in pairs(G.deck.cards) do
+				local safe = false
+				if not v.highlighted then
+					for a, b in pairs(G.hand.highlighted) do
+						if b:get_id() == v:get_id() or (b:norank() and v:norank()) then
+							safe = true
+							break
+						end
+					end
+				end
+				if not safe and not v.highlighted then
+					if v.edition and v.edition.jen_diplopia then
+						v:set_edition(nil, true, true)
+					end
+					v:sell_card()
+				end
+			end
+			for k, v in pairs(G.discard.cards) do
+				local safe = false
+				if not v.highlighted then
+					for a, b in pairs(G.hand.highlighted) do
+						if b:get_id() == v:get_id() or (b:norank() and v:norank()) then
+							safe = true
+							break
+						end
+					end
+				end
+				if not safe and not v.highlighted then
+					if v.edition and v.edition.jen_diplopia then
+						v:set_edition(nil, true, true)
+					end
+					v:sell_card()
+				end
+			end
+		end
+	end
+}
+
+SMODS.Consumable {
+	key = 'sigil_ex',
+	set = 'jen_exconsumable',
+	loc_txt = {
+		name = 'Sigil {C:dark_edition}EX{}',
+		text = {
+			'Select {C:attention}any number{} of cards,',
+			'all other cards whose suit',
+			'{C:attention}does not match any of the selected cards{}',
+			'will be removed and {C:money}sold{}',
+			'{C:inactive}(Ignores effect of Wilds; card\'s ACTUAL suit must match){}',
+			'{C:inactive}(Removes Diplopia from card before selling){}'
+		}
+	},
+	pos = { x = 0, y = 12 },
+	soul_pos = { x = 1, y = 12 },
+	soul_rate = 0,
+	cost = 175,
+	unlocked = true,
+	discovered = true,
+	no_doe = true,
+	hidden = true,
+	atlas = 'jenexspectrals',
+	can_use = function(self, card)
+		return abletouseconsumables() and #((G.hand or {}).highlighted or {}) > 0
+	end,
+	use = function(self, card, area, copier)
+		if #G.hand.highlighted > 0 then
+			for k, v in pairs(G.hand.cards) do
+				local safe = false
+				if not v.highlighted then
+					for a, b in pairs(G.hand.highlighted) do
+						if (b:norank() and v:norank()) or b.base.suit == v.base.suit then
+							safe = true
+							break
+						end
+					end
+				end
+				if not safe and not v.highlighted then
+					if v.edition and v.edition.jen_diplopia then
+						v:set_edition(nil, true, true)
+					end
+					v:sell_card()
+				end
+			end
+			for k, v in pairs(G.deck.cards) do
+				local safe = false
+				if not v.highlighted then
+					for a, b in pairs(G.hand.highlighted) do
+						if (b:norank() and v:norank()) or b.base.suit == v.base.suit then
+							safe = true
+							break
+						end
+					end
+				end
+				if not safe and not v.highlighted then
+					if v.edition and v.edition.jen_diplopia then
+						v:set_edition(nil, true, true)
+					end
+					v:sell_card()
+				end
+			end
+			for k, v in pairs(G.discard.cards) do
+				local safe = false
+				if not v.highlighted then
+					for a, b in pairs(G.hand.highlighted) do
+						if (b:norank() and v:norank()) or b.base.suit == v.base.suit then
+							safe = true
+							break
+						end
+					end
+				end
+				if not safe and not v.highlighted then
+					if v.edition and v.edition.jen_diplopia then
+						v:set_edition(nil, true, true)
+					end
+					v:sell_card()
+				end
+			end
+		end
+	end
+}
+
+SMODS.Consumable {
+	key = 'wraith_ex',
+	set = 'jen_exconsumable',
+	loc_txt = {
+		name = 'Wraith {C:dark_edition}EX{}',
+		text = {
+			'Create one of every {C:cry_epic,E:1}Epic{} and',
+			'{C:legendary,E:1}Legendary {C:almanac,E:1}Jen\'s Almanac {C:attention}Joker',
+			'{C:inactive}(Does not require room, but may overflow){}'
+		}
+	},
+	pos = { x = 0, y = 15 },
+	soul_pos = { x = 1, y = 15 },
+	cost = 175,
+	soul_rate = 0,
+	unlocked = true,
+	discovered = true,
+	no_doe = true,
+	atlas = 'jenexspectrals',
+	can_use = function(self, card)
+		return abletouseconsumables()
+	end,
+	use = function(self, card, area, copier)
+		for k, v in pairs(G.P_CENTERS) do
+			if v.set == 'Joker' and string.sub(k, 1, 6) == 'j_jen_' and (tostring(v.rarity) == 'cry_epic' or (type(v.rarity) == 'number' and v.rarity == 4)) then
+				local card2 = create_card('Joker', G.jokers, nil, nil, nil, nil, v.key, 'wraith_ex')
+				card2:add_to_deck()
+				G.jokers:emplace(card2)
+			end
+		end
+	end
+}
+
 local ccr = create_card
+
+local function chance_for_EX()
+	local chance = Jen.config.ex_chance - 1
+	if #SMODS.find_card('j_jen_apollo') > 0 then
+		for _, claunecksmentor in pairs(SMODS.find_card('j_jen_apollo')) do
+			chance = chance / claunecksmentor.ability.EXchance_amplifier
+		end
+	end
+	return chance + 1
+end
 
 function create_card(_type, area, legendary, _rarity, skip_materialize, soulable, forced_key, key_append)
 	local card = ccr(_type, area, legendary, _rarity, skip_materialize, soulable, forced_key, key_append)
 	for k, v in pairs(exconsumables) do
-		if card.config.center.key == ('c_' .. v) and G.P_CENTERS['c_jen_' .. v .. '_ex'] and chance('ex_replacement', 75, true) then
+		if card.config.center.key == ('c_' .. v) and G.P_CENTERS['c_jen_' .. v .. '_ex'] and chance('ex_replacement', chance_for_EX(), true) then
 			G.E_MANAGER:add_event(Event({trigger = 'after', func = function()
 				if card and not (card.added_to_deck or card.no_ex) then
 					card:set_ability(G.P_CENTERS['c_jen_' .. v .. '_ex'])
 					card:set_cost()
-					play_sound('jen_excard', 1, 0.4)
+					play_sound('jen_excard', 1, 0.75)
 					card:juice_up(1.5, 1.5)
 				end
 				return true
@@ -9471,7 +10304,7 @@ function Card.add_to_deck(self, from_debuff)
 			abi.ability.eternal = true
 			G.consumeables.config.card_limit = traysize
 		end
-		if ((self.ability or {}).name or '') == 'Godsmarble' then
+		if self.config.center.key == 'j_jen_godsmarble' then
 			ease_ante(1)
 		end
         if G.jokers and #G.jokers.cards > 0 then
