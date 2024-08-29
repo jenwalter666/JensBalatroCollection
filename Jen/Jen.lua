@@ -8965,7 +8965,7 @@ SMODS.Consumable {
 			local card2 = create_card('Joker', G.jokers, nil, nil, nil, nil, 'j_jen_jimbo', 'jokerfromatarot')
 			card2:add_to_deck()
 			G.jokers:emplace(card2)
-			play_sound_q('excard')
+			play_sound_q('jen_excard')
 		else
 			local card2 = create_card('Joker', G.jokers, nil, nil, nil, nil, 'j_joker', 'jokerfromatarot')
 			card2:add_to_deck()
