@@ -7,7 +7,7 @@
 --- PRIORITY: 99999999999
 --- BADGE_COLOR: 000000
 --- PREFIX: inc
---- VERSION: 0.4.2
+--- VERSION: 0.4.3
 --- LOADER_VERSION_GEQ: 1.0.0
 
 Incantation = {consumable_in_use = false, accelerate = false} --will port more things over to this global later, but for now it's going to be mostly empty
@@ -136,7 +136,7 @@ end
 
 --[[
 
-+++ MOD SUPPORT SKELETON +++
++++ MOD SUPPORT SKELETON : ALWAYS INCLUDE THIS IN YOUR MOD'S INITIALISATION SOMEWHERE +++
 
 if not IncantationAddons then
 	IncantationAddons = {
@@ -356,6 +356,10 @@ function Card:use_consumeable(area, copier)
 	local obj = self.config.center
 	local uselim = self.OverrideBulkUseLimit or NaiveBulkUseCancel
 	local qty = self:getQty()
+	if qty <= 0 then
+		self:setQty(1)
+		qty = 1
+	end
 	if self.ability then
 		self.ability.qty_initial = qty
 	end
