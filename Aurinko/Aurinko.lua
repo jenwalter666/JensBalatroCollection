@@ -7,7 +7,7 @@
 --- PRIORITY: 98999999999
 --- BADGE_COLOR: 009cff
 --- PREFIX: aurinko
---- VERSION: 0.4.2
+--- VERSION: 0.4.3
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --[[
@@ -207,7 +207,7 @@ function level_up_hand(card, hand, instant, amount)
 						end
 						if obj.ee_chips then
 							factor = math.abs(amount) == 1 and obj.ee_chips or repeated_hyper(2, to_big(obj.ee_chips), math.abs(amount))
-							if amount > to_big(0) then
+							if amount > 0 then
 								op = '^^'
 								G.GAME.hands[hand].s_chips = math.floor(math.max(get_s_chips(hand):arrow(2, factor), 1))
 								G.GAME.hands[hand].chips = math.floor(math.max(G.GAME.hands[hand].chips:arrow(2, factor), 1))
@@ -227,7 +227,7 @@ function level_up_hand(card, hand, instant, amount)
 						end
 						if obj.eee_chips then
 							factor = math.abs(amount) == 1 and obj.eee_chips or repeated_hyper(3, to_big(obj.eee_chips), math.abs(amount))
-							if amount > to_big(0) then
+							if amount > 0 then
 								op = '^^^'
 								G.GAME.hands[hand].s_chips = math.floor(math.max(get_s_chips(hand):arrow(3, factor), 1))
 								G.GAME.hands[hand].chips = math.floor(math.max(G.GAME.hands[hand].chips:arrow(3, factor), 1))
@@ -247,7 +247,7 @@ function level_up_hand(card, hand, instant, amount)
 						end
 						if obj.hyper_chips and type(obj.hyper_chips) == 'table' then
 							factor = math.abs(amount) == 1 and {obj.hyper_chips[1], to_big(obj.hyper_chips[2])} or {obj.hyper_chips[1], repeated_hyper(obj.hyper_chips[1], to_big(obj.hyper_chips[2]), math.abs(amount))}
-							if amount > to_big(0) then
+							if amount > 0 then
 								op = obj.hyper_chips[1] > 5 and ('{' .. obj.hyper_chips[1] .. '}') or string.rep('^', obj.hyper_chips[1])
 								G.GAME.hands[hand].s_chips = math.floor(math.max(get_s_chips(hand):arrow(factor[1], factor[2]), 1))
 								G.GAME.hands[hand].chips = math.floor(math.max(G.GAME.hands[hand].chips:arrow(factor[1], factor[2]), 1))
