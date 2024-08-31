@@ -584,7 +584,7 @@ G.FUNCS.use_every_planet = function(e)
 	end
 	for i = 1, #targets do
 		local card = targets[i]
-		card.bulkuse = card:CanBulkUse()
+		card.bulkuse = card:CanBulkUse() and math.max(1, card:getQty()) > 1
 		card:use_consumeable(card.area)
 		card.area:remove_card(card)
 		G.play:emplace(card)
