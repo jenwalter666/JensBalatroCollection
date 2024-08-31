@@ -17,7 +17,7 @@ match_indent = true
 target = "game.lua"
 pattern = "for k, v in pairs(settings_file) do"
 position = "after"
-payload = "if k == 'FASTFORWARD' then v = math.min(1, v) end"
+payload = "if k == 'FASTFORWARD' then v = math.min(2, v) end"
 match_indent = true
 
 [[patches]]
