@@ -7,7 +7,7 @@
 --- PRIORITY: 99999999999
 --- BADGE_COLOR: 000000
 --- PREFIX: inc
---- VERSION: 0.4.3
+--- VERSION: 0.5.0
 --- LOADER_VERSION_GEQ: 1.0.0
 
 Incantation = {consumable_in_use = false, accelerate = false} --will port more things over to this global later, but for now it's going to be mostly empty
@@ -519,6 +519,20 @@ G.FUNCS.can_use_all = function(e)
 	end
 end
 
+G.FUNCS.can_use_every_planet = function(e)
+	local card = e.config.ref_table
+	local obj = card.config.center
+	if (((card.config or {}).center or {}).set or '') == 'Planet' and card:CanBulkUse() and CanUseStackButtons() and not card.ignorestacking then
+        e.config.colour = G.C.SECONDARY_SET.Planet
+        e.config.button = 'use_every_planet'
+		e.states.visible = true
+	else
+        e.config.colour = G.C.UI.BACKGROUND_INACTIVE
+        e.config.button = nil
+		e.states.visible = false
+	end
+end
+
 G.FUNCS.can_use_naivebulk = function(e)
 	local card = e.config.ref_table
 	local obj = card.config.center
@@ -554,6 +568,49 @@ G.FUNCS.use_all = function(e)
 	if card:CanBulkUse() and (not obj.can_use or obj:can_use(card)) and (card:getQty()) > 1 and card.highlighted then
 		card.bulkuse = true
 		G.FUNCS.use_card(e, false, true)
+	end
+end
+
+G.FUNCS.use_every_planet = function(e)
+	local targets = {}
+	for i = 1, #G.consumeables.cards do
+		local card = G.consumeables.cards[i]
+		if card then
+			local obj = card.config.center
+			if (((card.config or {}).center or {}).set or '') == 'Planet' and (not obj.can_use or obj:can_use(card)) then
+				table.insert(targets, card)
+			end
+		end
+	end
+	for i = 1, #targets do
+		local card = targets[i]
+		card.bulkuse = card:CanBulkUse()
+		card:use_consumeable(card.area)
+		card.area:remove_card(card)
+		G.play:emplace(card)
+		if G.betmma_abilities then
+			for i = 1, #G.betmma_abilities.cards do
+				G.betmma_abilities.cards[i]:calculate_joker({using_consumeable = true, consumeable = card})
+			end
+		end
+		for i = 1, #G.jokers.cards do
+			local effects = G.jokers.cards[i]:calculate_joker({using_consumeable = true, consumeable = card})
+			if (SMODS.Mods['Cryptid'] or {}).can_load and effects and effects.joker_repetitions then
+				rep_list = effects.joker_repetitions
+				for z=1, #rep_list do
+					if type(rep_list[z]) == 'table' and rep_list[z].repetitions then
+						for r=1, rep_list[z].repetitions do
+							card_eval_status_text(rep_list[z].card, 'jokers', nil, nil, nil, rep_list[z])
+							G.jokers.cards[i]:calculate_joker({using_consumeable = true, consumeable = card, retrigger_joker = true})
+						end
+					end
+				end
+			end
+		end
+		G.E_MANAGER:add_event(Event({func = function()
+			card:start_dissolve()
+			return true
+		end}))
 	end
 end
 
@@ -659,8 +716,125 @@ end
 local hlref = Card.highlight
 
 function Card:highlight(is_highlighted)
+	local isplanet = ((self.ability or {}).set or '') == 'Planet'
 	if self:CanStack() and self.added_to_deck and not self.ignorestacking then
 		if is_highlighted then
+			if isplanet then
+				self.children.everyplanetbutton = UIBox {
+					definition = {
+						n = G.UIT.ROOT,
+						config = {
+							minh = 0.3,
+							maxh = 0.6,
+							minw = 0.3,
+							maxw = 4,
+							r = 0.08,
+							padding = 0.1,
+							align = 'cm',
+							colour = G.C.SECONDARY_SET.Planet,
+							shadow = true,
+							button = 'use_every_planet',
+							func = 'can_use_every_planet',
+							ref_table = self
+						},
+						nodes = {
+							{
+								n = G.UIT.T,
+								config = {
+									text = 'MASS-USE PLANETS',
+									scale = 0.3,
+									colour = G.C.UI.TEXT_LIGHT
+								}
+							}
+						}
+					},
+					config = {
+						align = 'bmi',
+						offset = {
+							x = 0,
+							y = 1
+						},
+						bond = 'Strong',
+						parent = self
+					}
+				}
+			end
+			self.children.useallbutton = UIBox {
+				definition = {
+					n = G.UIT.ROOT,
+					config = {
+						minh = 0.3,
+						maxh = 0.6,
+						minw = 0.3,
+						maxw = 4,
+						r = 0.08,
+						padding = 0.1,
+						align = 'cm',
+						colour = G.C.DARK_EDITION,
+						shadow = true,
+						button = 'use_all',
+						func = 'can_use_all',
+						ref_table = self
+					},
+					nodes = {
+						{
+							n = G.UIT.T,
+							config = {
+								text = 'BULK USE' .. (CFG.UnsafeMode and ' (NORMAL)' or ''),
+								scale = 0.3,
+								colour = G.C.UI.TEXT_LIGHT
+							}
+						}
+					}
+				},
+				config = {
+					align = 'bmi',
+					offset = {
+						x = 0,
+						y = 0.5
+					},
+					bond = 'Strong',
+					parent = self
+				}
+			}
+			self.children.mergebutton = UIBox {
+				definition = {
+					n = G.UIT.ROOT,
+					config = {
+						minh = 0.3,
+						maxh = 0.6,
+						minw = 0.3,
+						maxw = 4,
+						r = 0.08,
+						padding = 0.1,
+						align = 'cm',
+						colour = G.C.BLUE,
+						shadow = true,
+						button = 'merge_card',
+						func = 'can_merge_card',
+						ref_table = self
+					},
+					nodes = {
+						{
+							n = G.UIT.T,
+							config = {
+								text = 'MERGE',
+								scale = 0.3,
+								colour = G.C.UI.TEXT_LIGHT
+							}
+						}
+					}
+				},
+				config = {
+					align = 'bmi',
+					offset = {
+						x = 0,
+						y = 1 + (isplanet and 0.5 or 0)
+					},
+					bond = 'Strong',
+					parent = self
+				}
+			}
 			self.children.splithalfbutton = UIBox {
 				definition = {
 					n = G.UIT.ROOT,
@@ -693,7 +867,7 @@ function Card:highlight(is_highlighted)
 					align = 'bmi',
 					offset = {
 						x = 0,
-						y = 0.5
+						y = 1.5 + (isplanet and 0.5 or 0)
 					},
 					bond = 'Strong',
 					parent = self
@@ -732,83 +906,7 @@ function Card:highlight(is_highlighted)
 					align = 'bmi',
 					offset = {
 						x = 0,
-						y = 1
-					},
-					bond = 'Strong',
-					parent = self
-				}
-			}
-			self.children.mergebutton = UIBox {
-				definition = {
-					n = G.UIT.ROOT,
-					config = {
-						minh = 0.3,
-						maxh = 0.6,
-						minw = 0.3,
-						maxw = 4,
-						r = 0.08,
-						padding = 0.1,
-						align = 'cm',
-						colour = G.C.BLUE,
-						shadow = true,
-						button = 'merge_card',
-						func = 'can_merge_card',
-						ref_table = self
-					},
-					nodes = {
-						{
-							n = G.UIT.T,
-							config = {
-								text = 'MERGE',
-								scale = 0.3,
-								colour = G.C.UI.TEXT_LIGHT
-							}
-						}
-					}
-				},
-				config = {
-					align = 'bmi',
-					offset = {
-						x = 0,
-						y = 1.5
-					},
-					bond = 'Strong',
-					parent = self
-				}
-			}
-			self.children.useallbutton = UIBox {
-				definition = {
-					n = G.UIT.ROOT,
-					config = {
-						minh = 0.3,
-						maxh = 0.6,
-						minw = 0.3,
-						maxw = 4,
-						r = 0.08,
-						padding = 0.1,
-						align = 'cm',
-						colour = G.C.DARK_EDITION,
-						shadow = true,
-						button = 'use_all',
-						func = 'can_use_all',
-						ref_table = self
-					},
-					nodes = {
-						{
-							n = G.UIT.T,
-							config = {
-								text = 'BULK USE' .. (CFG.UnsafeMode and ' (NORMAL)' or ''),
-								scale = 0.3,
-								colour = G.C.UI.TEXT_LIGHT
-							}
-						}
-					}
-				},
-				config = {
-					align = 'bmi',
-					offset = {
-						x = 0,
-						y = 2
+						y = 2 + (isplanet and 0.5 or 0)
 					},
 					bond = 'Strong',
 					parent = self
@@ -847,7 +945,7 @@ function Card:highlight(is_highlighted)
 						align = 'bmi',
 						offset = {
 							x = 0,
-							y = 2.5
+							y = 2.5 + (isplanet and 0.5 or 0)
 						},
 						bond = 'Strong',
 						parent = self
@@ -855,6 +953,9 @@ function Card:highlight(is_highlighted)
 				}
 			end
 		else
+			if isplanet then
+				if self.children.everyplanetbutton then self.children.everyplanetbutton:remove();self.children.everyplanetbutton = nil end
+			end
 			if self.children.splithalfbutton then self.children.splithalfbutton:remove();self.children.splithalfbutton = nil end
 			if self.children.splitonebutton then self.children.splitonebutton:remove();self.children.splitonebutton = nil end
 			if self.children.mergebutton then self.children.mergebutton:remove();self.children.mergebutton = nil end
