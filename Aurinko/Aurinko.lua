@@ -7,7 +7,7 @@
 --- PRIORITY: 98999999999
 --- BADGE_COLOR: 009cff
 --- PREFIX: aurinko
---- VERSION: 0.4.1
+--- VERSION: 0.4.2
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --[[
@@ -69,6 +69,18 @@ local function get_s_mult(hand)
 		G.GAME.hands[hand].s_mult = to_big(G.GAME.hands[hand].s_mult or 1)
 	end
 	return G.GAME.hands[hand].s_mult
+end
+
+local function repeated_hyper(arrows, operand, repetitions)
+	local amnt = to_big(operand)
+	for i = 1, repetitions do
+		if arrows == 1 then
+			amnt = amnt ^ operand
+		else
+			amnt = amnt:arrow(math.min(1e3, arrows), operand)
+		end
+	end
+	return amnt
 end
 
 local luhr = level_up_hand
@@ -174,7 +186,7 @@ function level_up_hand(card, hand, instant, amount)
 							end
 						end
 						if obj.e_chips then
-							factor = math.abs(amount) == 1 and obj.e_chips or to_big(obj.e_chips) ^ (to_big(obj.e_chips) ^ math.abs(amount))
+							factor = math.abs(amount) == 1 and obj.e_chips or repeated_hyper(1, to_big(obj.e_chips), math.abs(amount))
 							if amount > 0 then
 								op = '^'
 								G.GAME.hands[hand].s_chips = math.floor(math.max(get_s_chips(hand) ^ factor, 1))
@@ -194,8 +206,8 @@ function level_up_hand(card, hand, instant, amount)
 							end
 						end
 						if obj.ee_chips then
-							factor = math.abs(amount) == 1 and to_big(obj.ee_chips) or to_big(obj.ee_chips):arrow(2, (obj.ee_chips ^ math.abs(amount)))
-							if amount > 0 then
+							factor = math.abs(amount) == 1 and obj.ee_chips or repeated_hyper(2, to_big(obj.ee_chips), math.abs(amount))
+							if amount > to_big(0) then
 								op = '^^'
 								G.GAME.hands[hand].s_chips = math.floor(math.max(get_s_chips(hand):arrow(2, factor), 1))
 								G.GAME.hands[hand].chips = math.floor(math.max(G.GAME.hands[hand].chips:arrow(2, factor), 1))
@@ -214,8 +226,8 @@ function level_up_hand(card, hand, instant, amount)
 							end
 						end
 						if obj.eee_chips then
-							factor = math.abs(amount) == 1 and to_big(obj.eee_chips) or to_big(obj.eee_chips):arrow(3, (obj.eee_chips ^ math.abs(amount)))
-							if amount > 0 then
+							factor = math.abs(amount) == 1 and obj.eee_chips or repeated_hyper(3, to_big(obj.eee_chips), math.abs(amount))
+							if amount > to_big(0) then
 								op = '^^^'
 								G.GAME.hands[hand].s_chips = math.floor(math.max(get_s_chips(hand):arrow(3, factor), 1))
 								G.GAME.hands[hand].chips = math.floor(math.max(G.GAME.hands[hand].chips:arrow(3, factor), 1))
@@ -234,8 +246,8 @@ function level_up_hand(card, hand, instant, amount)
 							end
 						end
 						if obj.hyper_chips and type(obj.hyper_chips) == 'table' then
-							factor = math.abs(amount) == 1 and {obj.hyper_chips[1], to_big(obj.hyper_chips[2])} or {obj.hyper_chips[1], to_big(obj.hyper_chips[2]):arrow(obj.hyper_chips[1], (obj.hyper_chips[2] ^ math.abs(amount)))}
-							if amount > 0 then
+							factor = math.abs(amount) == 1 and {obj.hyper_chips[1], to_big(obj.hyper_chips[2])} or {obj.hyper_chips[1], repeated_hyper(obj.hyper_chips[1], to_big(obj.hyper_chips[2]), math.abs(amount))}
+							if amount > to_big(0) then
 								op = obj.hyper_chips[1] > 5 and ('{' .. obj.hyper_chips[1] .. '}') or string.rep('^', obj.hyper_chips[1])
 								G.GAME.hands[hand].s_chips = math.floor(math.max(get_s_chips(hand):arrow(factor[1], factor[2]), 1))
 								G.GAME.hands[hand].chips = math.floor(math.max(G.GAME.hands[hand].chips:arrow(factor[1], factor[2]), 1))
@@ -276,7 +288,7 @@ function level_up_hand(card, hand, instant, amount)
 					end
 					if SMODS.Mods['Talisman'] then
 						if obj.e_mult then
-							factor = math.abs(amount) == 1 and obj.e_mult or to_big(obj.e_mult) ^ (to_big(obj.e_mult) ^ math.abs(amount))
+							factor = math.abs(amount) == 1 and obj.e_mult or repeated_hyper(1, to_big(obj.e_mult), math.abs(amount))
 							if amount > 0 then
 								op = '^'
 								G.GAME.hands[hand].s_mult = math.floor(math.max(get_s_mult(hand) ^ factor, 1))
@@ -296,7 +308,7 @@ function level_up_hand(card, hand, instant, amount)
 							end
 						end
 						if obj.ee_mult then
-							factor = math.abs(amount) == 1 and to_big(obj.ee_mult) or to_big(obj.ee_mult):arrow(2, (obj.ee_mult ^ math.abs(amount)))
+							factor = math.abs(amount) == 1 and obj.ee_mult or repeated_hyper(2, to_big(obj.ee_mult), math.abs(amount))
 							if amount > 0 then
 								op = '^^'
 								G.GAME.hands[hand].s_mult = math.floor(math.max(get_s_mult(hand):arrow(2, factor), 1))
@@ -308,7 +320,7 @@ function level_up_hand(card, hand, instant, amount)
 							end
 							if not instant then
 								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
-									play_sound('talisman_eemult')
+									play_sound('talisman_eechip')
 									card:juice_up(0.8, 0.5)
 								return true end }))
 								update_hand_text({delay = 0}, {mult = op .. number_format(factor), StatusText = true})
@@ -316,7 +328,7 @@ function level_up_hand(card, hand, instant, amount)
 							end
 						end
 						if obj.eee_mult then
-							factor = math.abs(amount) == 1 and to_big(obj.eee_mult) or to_big(obj.eee_mult):arrow(3, (obj.eee_mult ^ math.abs(amount)))
+							factor = math.abs(amount) == 1 and obj.eee_mult or repeated_hyper(3, to_big(obj.eee_mult), math.abs(amount))
 							if amount > 0 then
 								op = '^^^'
 								G.GAME.hands[hand].s_mult = math.floor(math.max(get_s_mult(hand):arrow(3, factor), 1))
@@ -328,7 +340,7 @@ function level_up_hand(card, hand, instant, amount)
 							end
 							if not instant then
 								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
-									play_sound('talisman_eeemult')
+									play_sound('talisman_eeechip')
 									card:juice_up(0.8, 0.5)
 								return true end }))
 								update_hand_text({delay = 0}, {mult = op .. number_format(factor), StatusText = true})
@@ -336,7 +348,7 @@ function level_up_hand(card, hand, instant, amount)
 							end
 						end
 						if obj.hyper_mult and type(obj.hyper_mult) == 'table' then
-							factor = math.abs(amount) == 1 and {obj.hyper_mult[1], to_big(obj.hyper_mult[2])} or {obj.hyper_mult[1], to_big(obj.hyper_mult[2]):arrow(obj.hyper_mult[1], (obj.hyper_mult[2] ^ math.abs(amount)))}
+							factor = math.abs(amount) == 1 and {obj.hyper_mult[1], to_big(obj.hyper_mult[2])} or {obj.hyper_mult[1], repeated_hyper(obj.hyper_mult[1], to_big(obj.hyper_mult[2]), math.abs(amount))}
 							if amount > 0 then
 								op = obj.hyper_mult[1] > 5 and ('{' .. obj.hyper_mult[1] .. '}') or string.rep('^', obj.hyper_mult[1])
 								G.GAME.hands[hand].s_mult = math.floor(math.max(get_s_mult(hand):arrow(factor[1], factor[2]), 1))
@@ -348,7 +360,7 @@ function level_up_hand(card, hand, instant, amount)
 							end
 							if not instant then
 								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
-									play_sound('talisman_eeemult')
+									play_sound('talisman_eeechip')
 									card:juice_up(0.8, 0.5)
 								return true end }))
 								update_hand_text({delay = 0}, {mult = op .. number_format(factor), StatusText = true})
@@ -389,7 +401,7 @@ function create_card(_type, area, legendary, _rarity, skip_materialize, soulable
 		blocking = false,
 		blockable = false,
 		func = function()
-			if not card.edition and (((_type == 'Planet' or _type == 'Planet_dx') and (obj.aurinko or (card.ability.consumeable and card.ability.consumeable.hand_type))) or AurinkoWhitelist[card.config.center.key]) then
+			if not card.edition and (((_type == 'Planet' or _type == 'Planet_dx') and (obj.aurinko or (card.ability.consumeable and card.ability.consumeable.hand_type))) or AurinkoWhitelist[card.ability.name]) then
 				local edition = poll_edition('edi'..(key_append or '')..tostring(G.GAME.round_resets.ante), math.max(1, math.min(1 + ((G.GAME.round_resets.ante / 2) - 0.5), 10)), true)
 				if edition and not edition.aurinko_blacklist then
 					card:set_edition(edition)
