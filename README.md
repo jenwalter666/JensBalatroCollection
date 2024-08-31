@@ -7,6 +7,10 @@ Collection of mods I've made for Balatro
 - **Nopeus** : Adds more speed options.
 - **Jen's Almanac** : An extension of the mod [Cryptid](https://github.com/MathIsFun0/Cryptid) which causes complete pandemonium.
 Read more below for info about compatibility on Almanac
+
+# Wait, where is Jen's Almanac?
+I removed it from GitHub because I need to reduce my workload; I'm juggling tons of things at once and trying to manage a lot of files simultaneously on GitHub, trying to remember what needs updating and what doesn't, is pretty difficult. You can still find Jen's Almanac in the [official Balatro Discord](https://discord.com/channels/1116389027176787968/1262697083438235729) or the [Cryptid Discord](https://discord.gg/eUf9Ur6RyB).
+
 # Installation
 
 Make sure that **none** of the mods included in this repository are nested. They should all be directly installed into the Mods folder.
@@ -33,6 +37,3 @@ Jen's Almanac synergises well with these mods:
 - MoreJokerPacks
 - Galdur
 - Handy
-
-- # Wait, where is Jen's Almanac?
-I removed it from GitHub because I need to reduce my workload; I'm juggling tons of things at once and trying to manage a lot of files simultaneously on GitHub, trying to remember what needs updating and what doesn't, is pretty difficult. You can still find Jen's Almanac in the [official Balatro Discord](https://discord.com/channels/1116389027176787968/1262697083438235729) or the [Cryptid Discord](https://discord.gg/eUf9Ur6RyB).
