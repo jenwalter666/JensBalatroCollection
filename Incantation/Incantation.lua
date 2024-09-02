@@ -7,7 +7,7 @@
 --- PRIORITY: 89999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
 --- BADGE_COLOR: 000000
 --- PREFIX: inc
---- VERSION: 0.5.0
+--- VERSION: 0.5.1
 --- LOADER_VERSION_GEQ: 1.0.0
 
 Incantation = {consumable_in_use = false, accelerate = false} --will port more things over to this global later, but for now it's going to be mostly empty
@@ -335,6 +335,7 @@ function Card:try_merge()
 				v:set_cost()
 				if (self:getQty()) - space < 1 then
 					self.ignorestacking = true
+					self.area:remove_card(self)
 					self:remove()
 					return true
 				else
@@ -571,6 +572,65 @@ G.FUNCS.use_all = function(e)
 	end
 end
 
+function runthrough_planets(try)
+	local returntotray = {}
+	for i = 1, #G.play.cards do
+		local card = G.play.cards[i]
+		if card then
+			local obj = card.config.center
+			if (((card.config or {}).center or {}).set or '') == 'Planet' then
+				card.bulkuse = card:CanBulkUse() and math.max(1, card:getQty()) > 1
+				card:use_consumeable(G.consumeables)
+				if G.betmma_abilities then
+					for i = 1, #G.betmma_abilities.cards do
+						G.betmma_abilities.cards[i]:calculate_joker({using_consumeable = true, consumeable = card})
+					end
+				end
+				for i = 1, #G.jokers.cards do
+					local effects = G.jokers.cards[i]:calculate_joker({using_consumeable = true, consumeable = card})
+					if (SMODS.Mods['Cryptid'] or {}).can_load and effects and effects.joker_repetitions then
+						rep_list = effects.joker_repetitions
+						for z=1, #rep_list do
+							if type(rep_list[z]) == 'table' and rep_list[z].repetitions then
+								for r=1, rep_list[z].repetitions do
+									card_eval_status_text(rep_list[z].card, 'jokers', nil, nil, nil, rep_list[z])
+									G.jokers.cards[i]:calculate_joker({using_consumeable = true, consumeable = card, retrigger_joker = true})
+								end
+							end
+						end
+					end
+				end
+				G.E_MANAGER:add_event(Event({func = function()
+					card:start_dissolve()
+					G.E_MANAGER:add_event(Event({func = function()
+						if card then
+							if card.area == G.play then
+								card:remove()
+							end
+						end
+						return true
+					end}))
+					return true
+				end}))
+			elseif try >= 50 and (((card.config or {}).center or {}).set or '') == 'Planet' then
+				table.insert(returntotray, card)
+			end
+		end
+	end
+	if #returntotray > 0 then
+		for k, card in pairs(returntotray) do
+			card.area:remove_card(card)
+			G.consumeables:emplace(card)
+		end
+	end
+	G.E_MANAGER:add_event(Event({func = function()
+		if #G.play.cards > 0 and try < 51 then
+			runthrough_planets(try + 1)
+		end
+		return true
+	end}))
+end
+
 G.FUNCS.use_every_planet = function(e)
 	local targets = {}
 	for i = 1, #G.consumeables.cards do
@@ -584,34 +644,17 @@ G.FUNCS.use_every_planet = function(e)
 	end
 	for i = 1, #targets do
 		local card = targets[i]
-		card.bulkuse = card:CanBulkUse() and math.max(1, card:getQty()) > 1
-		card:use_consumeable(card.area)
-		card.area:remove_card(card)
-		G.play:emplace(card)
-		if G.betmma_abilities then
-			for i = 1, #G.betmma_abilities.cards do
-				G.betmma_abilities.cards[i]:calculate_joker({using_consumeable = true, consumeable = card})
-			end
-		end
-		for i = 1, #G.jokers.cards do
-			local effects = G.jokers.cards[i]:calculate_joker({using_consumeable = true, consumeable = card})
-			if (SMODS.Mods['Cryptid'] or {}).can_load and effects and effects.joker_repetitions then
-				rep_list = effects.joker_repetitions
-				for z=1, #rep_list do
-					if type(rep_list[z]) == 'table' and rep_list[z].repetitions then
-						for r=1, rep_list[z].repetitions do
-							card_eval_status_text(rep_list[z].card, 'jokers', nil, nil, nil, rep_list[z])
-							G.jokers.cards[i]:calculate_joker({using_consumeable = true, consumeable = card, retrigger_joker = true})
-						end
-					end
-				end
-			end
-		end
 		G.E_MANAGER:add_event(Event({func = function()
-			card:start_dissolve()
+			if math.ceil(i/2) == i/2 then play_sound('card1') end
+			card.area:remove_card(card)
+			G.play:emplace(card)
 			return true
 		end}))
 	end
+	G.E_MANAGER:add_event(Event({func = function()
+		runthrough_planets(1)
+		return true
+	end}))
 end
 
 G.FUNCS.use_naivebulk = function(e)
