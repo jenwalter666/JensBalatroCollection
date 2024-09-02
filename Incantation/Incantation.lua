@@ -7,7 +7,7 @@
 --- PRIORITY: 89999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
 --- BADGE_COLOR: 000000
 --- PREFIX: inc
---- VERSION: 0.5.1
+--- VERSION: 0.5.2
 --- LOADER_VERSION_GEQ: 1.0.0
 
 Incantation = {consumable_in_use = false, accelerate = false} --will port more things over to this global later, but for now it's going to be mostly empty
@@ -572,8 +572,7 @@ G.FUNCS.use_all = function(e)
 	end
 end
 
-function runthrough_planets(try)
-	local returntotray = {}
+function runthrough_planets()
 	for i = 1, #G.play.cards do
 		local card = G.play.cards[i]
 		if card then
@@ -605,30 +604,16 @@ function runthrough_planets(try)
 					G.E_MANAGER:add_event(Event({func = function()
 						if card then
 							if card.area == G.play then
-								card:remove()
+								card:start_dissolve()
 							end
 						end
 						return true
 					end}))
 					return true
 				end}))
-			elseif try >= 50 and (((card.config or {}).center or {}).set or '') == 'Planet' then
-				table.insert(returntotray, card)
 			end
 		end
 	end
-	if #returntotray > 0 then
-		for k, card in pairs(returntotray) do
-			card.area:remove_card(card)
-			G.consumeables:emplace(card)
-		end
-	end
-	G.E_MANAGER:add_event(Event({func = function()
-		if #G.play.cards > 0 and try < 51 then
-			runthrough_planets(try + 1)
-		end
-		return true
-	end}))
 end
 
 G.FUNCS.use_every_planet = function(e)
@@ -652,7 +637,7 @@ G.FUNCS.use_every_planet = function(e)
 		end}))
 	end
 	G.E_MANAGER:add_event(Event({func = function()
-		runthrough_planets(1)
+		runthrough_planets()
 		return true
 	end}))
 end
