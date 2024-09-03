@@ -307,7 +307,7 @@ function level_up_hand(card, hand, instant, amount)
 							end
 							if not instant then
 								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
-									play_sound('talisman_eechip')
+									play_sound('talisman_eemult')
 									card:juice_up(0.8, 0.5)
 								return true end }))
 								update_hand_text({delay = 0}, {mult = op .. number_format(factor), StatusText = true})
@@ -327,7 +327,7 @@ function level_up_hand(card, hand, instant, amount)
 							end
 							if not instant then
 								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
-									play_sound('talisman_eeechip')
+									play_sound('talisman_eeemult')
 									card:juice_up(0.8, 0.5)
 								return true end }))
 								update_hand_text({delay = 0}, {mult = op .. number_format(factor), StatusText = true})
@@ -347,7 +347,7 @@ function level_up_hand(card, hand, instant, amount)
 							end
 							if not instant then
 								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
-									play_sound('talisman_eeechip')
+									play_sound('talisman_eeemult')
 									card:juice_up(0.8, 0.5)
 								return true end }))
 								update_hand_text({delay = 0}, {mult = op .. number_format(factor), StatusText = true})
