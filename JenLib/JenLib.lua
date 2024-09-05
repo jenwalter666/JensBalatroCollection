@@ -244,6 +244,22 @@ function Card:resize(mod, force_save)
 	end
 end
 
+--Tries to reset the card's size, if it's saved
+function Card:resetsize()
+	if self.origsize then
+		self:hard_set_T(self.T.x, self.T.y, self.origsize.w, self.origsize.h)
+		remove_all(self.children)
+		self.children = {}
+		self.children.shadow = Moveable(0, 0, 0, 0)
+		self:set_sprites(self.config.center, batchfind((self.ability or {}).set or '', resize_lookout) and self.config.card)
+		if self.area then
+			if (G.shop_jokers and self.area == G.shop_jokers) or (G.shop_booster and self.area == G.shop_booster) or (G.shop_vouchers and self.area == G.shop_vouchers) then
+				create_shop_card_ui(self)
+			end
+		end
+	end
+end
+
 --Alias of Card:resize
 function Card:grow(mod, force_save)
 	self:resize(mod, force_save)
