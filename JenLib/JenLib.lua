@@ -6,13 +6,25 @@
 --- MOD_DESCRIPTION: Some functions that I commonly use which some people might find a use for
 --- BADGE_COLOR: 000000
 --- PREFIX: jenlib
---- VERSION: 0.0.1
+--- VERSION: 0.0.2
 --- LOADER_VERSION_GEQ: 1.0.0
 
+--Checks a string against a table of strings
+function batchfind(needle, haystack)
+	if type(needle) ~= 'string' then return false end
+	if type(haystack) ~= 'table' then return false end
+	for k, v in pairs(haystack) do
+		if type(v) == 'string' and v == needle then return true end
+	end
+	return false
+end
+
+--Easier way of doing chance rolls
 function chance(name, probability, absolute)
 	return pseudorandom(name) < (absolute and 1 or G.GAME.probabilities.normal)/probability
 end
 
+--Returns a deep copy of a table without infinite recursion
 function deepCopy(obj, seen)
     if type(obj) ~= 'table' then return obj end
     if seen and seen[obj] then return seen[obj] end
@@ -24,6 +36,7 @@ function deepCopy(obj, seen)
     return setmetatable(res, getmetatable(obj))
 end
 
+--Adds a delay to the event manager that uses real time instead of gamespeed-affected time
 function delay_realtime(time, queue)
     G.E_MANAGER:add_event(Event({
         trigger = 'after',
@@ -35,6 +48,7 @@ function delay_realtime(time, queue)
     }), queue)
 end
 
+--Useful for enhancements
 function scoringcard(context)
 	return context.cardarea and context.cardarea == G.play and not context.before and not context.after and not context.repetition
 end
@@ -97,6 +111,7 @@ function get_random_hand(ignore, seed, allowhidden)
 	return chosen_hand
 end
 
+--Rounds a number to the nearest integer or decimal place
 function round_number( num, idp )
 
 	local mult = 10 ^ ( idp or 0 )
@@ -203,11 +218,49 @@ function Card:invokefunc(func, ...)
 	if obj and obj[func] and type(obj[func]) == 'function' then obj[func](...) end
 end
 
---Changes the card's sprite position along its atlas
+--Changes the sprites of a card along its atlas
 function Card:spritepos(child, X, Y)
 	if self.children[child] then
 		if self.children[child].set_sprite_pos then
 			self.children[child]:set_sprite_pos({x = X, y = Y})
 		end
 	end
+end
+
+local resize_lookout = {'Default', 'Enhanced'}
+
+--Multiplies the card's size by mod
+function Card:resize(mod, force_save)
+	if force_save or not self.origsize then self.origsize = {w = self.T.w, h = self.T.h} end
+	self:hard_set_T(self.T.x, self.T.y, self.T.w * mod, self.T.h * mod)
+	remove_all(self.children)
+	self.children = {}
+	self.children.shadow = Moveable(0, 0, 0, 0)
+	self:set_sprites(self.config.center, batchfind((self.ability or {}).set or '', resize_lookout) and self.config.card)
+	if self.area then
+		if (G.shop_jokers and self.area == G.shop_jokers) or (G.shop_booster and self.area == G.shop_booster) or (G.shop_vouchers and self.area == G.shop_vouchers) then
+			create_shop_card_ui(self)
+		end
+	end
+end
+
+--Alias of Card:resize
+function Card:grow(mod, force_save)
+	self:resize(mod, force_save)
+end
+
+--Divides the card's size by mod, alias of Card:resize(1 / mod)
+function Card:shrink(mod, force_save)
+	self:resize(1 / mod, force_save)
+end
+
+function announce(txt, duration, size, col, snd, sndpitch, sndvol)
+G.E_MANAGER:add_event(Event({
+	func = (function()
+		if snd then play_sound(snd, sndpitch, sndvol) end
+		attention_text({
+			scale = size or 1.4, text = txt, hold = duration or 2, colour = col or G.C.WHITE, align = 'cm', offset = {x = 0,y = -2.7},major = G.play
+		})
+		return true
+	end)}))
 end
