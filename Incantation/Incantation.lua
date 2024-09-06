@@ -7,7 +7,7 @@
 --- PRIORITY: 89999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
 --- BADGE_COLOR: 000000
 --- PREFIX: inc
---- VERSION: 0.5.2
+--- VERSION: 0.5.3
 --- LOADER_VERSION_GEQ: 1.0.0
 
 Incantation = {consumable_in_use = false, accelerate = false} --will port more things over to this global later, but for now it's going to be mostly empty
@@ -16,7 +16,7 @@ local CFG = SMODS.current_mod.config
 
 local MaxStack = 9999
 local BulkUseLimit = 9999
-local NaiveBulkUseCancel = 50
+local NaiveBulkUseCancel = 100
 local AccelerateThreshold = 3
 
 local HardLimit = 9007199254740992
@@ -398,7 +398,7 @@ function Card:use_consumeable(area, copier)
         update_hand_text({sound = 'button', volume = 0.7, pitch = 1.1, delay = 0}, {mult = 0, chips = 0, handname = '', level = ''})
 		set_consumeable_usage(self, qty)
 	else
-		Incantation.accelerate = qty > AccelerateThreshold
+		Incantation.accelerate = qty > AccelerateThreshold or self.force_incantation_acceleration
 		self.cardinuse = true
 		Incantation.consumable_in_use = true
 		local lim = math.min(qty, uselim)
@@ -444,7 +444,7 @@ end
 
 local startdissolveref = Card.start_dissolve
 function Card:start_dissolve(a,b,c,d)
-	if self.ability.qty and self.ability.qty > 1 and Incantation.consumable_in_use then return end
+	if self.ability.qty and self.ability.qty > 1 and Incantation.consumable_in_use and not self.ignore_incantation_consumable_in_use then return end
 	self.ignorestacking = true
 	return startdissolveref(self,a,b,c,d)
 end
@@ -579,6 +579,7 @@ function runthrough_planets()
 			local obj = card.config.center
 			if (((card.config or {}).center or {}).set or '') == 'Planet' then
 				card.bulkuse = card:CanBulkUse() and math.max(1, card:getQty()) > 1
+				card.force_incantation_acceleration = true
 				card:use_consumeable(G.consumeables)
 				if G.betmma_abilities then
 					for i = 1, #G.betmma_abilities.cards do
@@ -600,15 +601,8 @@ function runthrough_planets()
 					end
 				end
 				G.E_MANAGER:add_event(Event({func = function()
+					card.ignore_incantation_consumable_in_use = true
 					card:start_dissolve()
-					G.E_MANAGER:add_event(Event({func = function()
-						if card then
-							if card.area == G.play then
-								card:start_dissolve()
-							end
-						end
-						return true
-					end}))
 					return true
 				end}))
 			end
