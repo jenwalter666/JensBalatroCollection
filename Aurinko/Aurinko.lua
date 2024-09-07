@@ -158,10 +158,10 @@ function level_up_hand(card, hand, instant, amount)
 							update_hand_text({delay = HoldDelay}, {chips = G.GAME.hands[hand].chips, StatusText = true})
 						elseif hand == G.handlist[#G.handlist] then
 							G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
-								play_sound('multhit1')
+								play_sound('chips1')
 								card:juice_up(0.8, 0.5)
 							return true end }))
-							update_hand_text({delay = HoldDelay}, {mult = (amount > 0 and '+' or '-') .. number_format(math.abs(factor)), StatusText = true})
+							update_hand_text({delay = HoldDelay}, {chips = (amount > 0 and '+' or '-') .. number_format(math.abs(factor)), StatusText = true})
 						end
 					end
 					if obj.mult then
@@ -179,7 +179,7 @@ function level_up_hand(card, hand, instant, amount)
 								play_sound('multhit1')
 								card:juice_up(0.8, 0.5)
 							return true end }))
-							update_hand_text({delay = HoldDelay}, {chips = (amount > 0 and '+' or '-') .. number_format(math.abs(factor)), StatusText = true})
+							update_hand_text({delay = HoldDelay}, {mult = (amount > 0 and '+' or '-') .. number_format(math.abs(factor)), StatusText = true})
 						end
 					end
 					if talisman then
