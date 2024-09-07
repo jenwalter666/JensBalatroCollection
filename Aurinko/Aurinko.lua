@@ -3,11 +3,11 @@
 --- MOD_NAME: Aurinko
 --- MOD_ID: aurinko
 --- MOD_AUTHOR: [jenwalter666]
---- MOD_DESCRIPTION: Lets planets naturally appear with editions, applies editions to hands when leveling
+--- MOD_DESCRIPTION: Lets other cards generate with editions
 --- PRIORITY: 98999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
 --- BADGE_COLOR: 009cff
 --- PREFIX: aurinko
---- VERSION: 0.4.6
+--- VERSION: 0.4.7
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --[[
@@ -70,6 +70,7 @@ local function get_s_mult(hand)
 	end
 	return G.GAME.hands[hand].s_mult
 end
+
 local luhr = level_up_hand
 function level_up_hand(card, hand, instant, amount)
 	local talisman = SMODS.Mods['Talisman']
@@ -89,17 +90,29 @@ function level_up_hand(card, hand, instant, amount)
 							card:juice_up(0.8, 0.5)
 						return true end }))
 						update_hand_text({delay = HoldDelay}, {mult = G.GAME.hands[hand].mult, StatusText = true})
+					elseif hand == G.handlist[#G.handlist] then
+						G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
+							play_sound('multhit1')
+							card:juice_up(0.8, 0.5)
+						return true end }))
+						update_hand_text({delay = HoldDelay}, {mult = (amount > 0 and '+' or '-') .. number_format(math.abs(factor)), StatusText = true})
 					end
 				elseif card.edition.foil then
 					factor = G.P_CENTERS.e_foil.config.extra * amount
-					G.GAME.hands[hand].s_chips = math.max(get_s_chips(hand) + factor, 0)
-					G.GAME.hands[hand].chips = math.max(G.GAME.hands[hand].chips + factor, 0)
+					G.GAME.hands[hand].s_chips = math.max(get_s_chips(hand) + factor, 1)
+					G.GAME.hands[hand].chips = math.max(G.GAME.hands[hand].chips + factor, 1)
 					if not instant then
 						G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
 							play_sound('chips1')
 							card:juice_up(0.8, 0.5)
 						return true end }))
 						update_hand_text({delay = HoldDelay}, {chips = G.GAME.hands[hand].chips, StatusText = true})
+					elseif hand == G.handlist[#G.handlist] then
+						G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
+							play_sound('chips1')
+							card:juice_up(0.8, 0.5)
+						return true end }))
+						update_hand_text({delay = HoldDelay}, {chips = (amount > 0 and '+' or '-') .. number_format(math.abs(factor)), StatusText = true})
 					end
 				elseif card.edition.polychrome then
 					factor = (talisman and to_big(G.P_CENTERS.e_polychrome.config.extra) or G.P_CENTERS.e_polychrome.config.extra) ^ math.abs(amount)
@@ -119,6 +132,12 @@ function level_up_hand(card, hand, instant, amount)
 						return true end }))
 						update_hand_text({delay = 0}, {mult = op .. number_format(factor), StatusText = true})
 						update_hand_text({delay = HoldDelay}, {mult = G.GAME.hands[hand].mult})
+					elseif hand == G.handlist[#G.handlist] then
+						G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
+							play_sound('multhit2')
+							card:juice_up(0.8, 0.5)
+						return true end }))
+						update_hand_text({delay = HoldDelay}, {mult = op .. number_format(factor), StatusText = true})
 					end
 				elseif not card.edition.negative then
 					local obj = card.edition
@@ -137,6 +156,12 @@ function level_up_hand(card, hand, instant, amount)
 								card:juice_up(0.8, 0.5)
 							return true end }))
 							update_hand_text({delay = HoldDelay}, {chips = G.GAME.hands[hand].chips, StatusText = true})
+						elseif hand == G.handlist[#G.handlist] then
+							G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
+								play_sound('multhit1')
+								card:juice_up(0.8, 0.5)
+							return true end }))
+							update_hand_text({delay = HoldDelay}, {mult = (amount > 0 and '+' or '-') .. number_format(math.abs(factor)), StatusText = true})
 						end
 					end
 					if obj.mult then
@@ -149,6 +174,12 @@ function level_up_hand(card, hand, instant, amount)
 								card:juice_up(0.8, 0.5)
 							return true end }))
 							update_hand_text({delay = HoldDelay}, {mult = G.GAME.hands[hand].mult, StatusText = true})
+						elseif hand == G.handlist[#G.handlist] then
+							G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
+								play_sound('multhit1')
+								card:juice_up(0.8, 0.5)
+							return true end }))
+							update_hand_text({delay = HoldDelay}, {chips = (amount > 0 and '+' or '-') .. number_format(math.abs(factor)), StatusText = true})
 						end
 					end
 					if talisman then
@@ -170,6 +201,12 @@ function level_up_hand(card, hand, instant, amount)
 								return true end }))
 								update_hand_text({delay = 0}, {chips = op .. number_format(factor), StatusText = true})
 								update_hand_text({delay = HoldDelay}, {chips = G.GAME.hands[hand].chips})
+							elseif hand == G.handlist[#G.handlist] then
+								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
+									play_sound('talisman_xchip')
+									card:juice_up(0.8, 0.5)
+								return true end }))
+								update_hand_text({delay = HoldDelay}, {chips = op .. number_format(factor), StatusText = true})
 							end
 						end
 						if obj.e_chips then
@@ -190,6 +227,12 @@ function level_up_hand(card, hand, instant, amount)
 								return true end }))
 								update_hand_text({delay = 0}, {chips = op .. number_format(factor), StatusText = true})
 								update_hand_text({delay = HoldDelay}, {chips = G.GAME.hands[hand].chips})
+							elseif hand == G.handlist[#G.handlist] then
+								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
+									play_sound('talisman_echip')
+									card:juice_up(0.8, 0.5)
+								return true end }))
+								update_hand_text({delay = HoldDelay}, {chips = op .. number_format(factor), StatusText = true})
 							end
 						end
 						if obj.ee_chips then
@@ -210,6 +253,12 @@ function level_up_hand(card, hand, instant, amount)
 								return true end }))
 								update_hand_text({delay = 0}, {chips = op .. number_format(factor), StatusText = true})
 								update_hand_text({delay = HoldDelay}, {chips = G.GAME.hands[hand].chips})
+							elseif hand == G.handlist[#G.handlist] then
+								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
+									play_sound('talisman_eechip')
+									card:juice_up(0.8, 0.5)
+								return true end }))
+								update_hand_text({delay = HoldDelay}, {chips = op .. number_format(factor), StatusText = true})
 							end
 						end
 						if obj.eee_chips then
@@ -230,6 +279,12 @@ function level_up_hand(card, hand, instant, amount)
 								return true end }))
 								update_hand_text({delay = 0}, {chips = op .. number_format(factor), StatusText = true})
 								update_hand_text({delay = HoldDelay}, {chips = G.GAME.hands[hand].chips})
+							elseif hand == G.handlist[#G.handlist] then
+								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
+									play_sound('talisman_eeechip')
+									card:juice_up(0.8, 0.5)
+								return true end }))
+								update_hand_text({delay = HoldDelay}, {chips = op .. number_format(factor), StatusText = true})
 							end
 						end
 						if obj.hyper_chips and type(obj.hyper_chips) == 'table' then
@@ -250,6 +305,12 @@ function level_up_hand(card, hand, instant, amount)
 								return true end }))
 								update_hand_text({delay = 0}, {chips = op .. number_format(factor), StatusText = true})
 								update_hand_text({delay = HoldDelay}, {chips = G.GAME.hands[hand].chips})
+							elseif hand == G.handlist[#G.handlist] then
+								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
+									play_sound('talisman_eeechip')
+									card:juice_up(0.8, 0.5)
+								return true end }))
+								update_hand_text({delay = HoldDelay}, {chips = op .. number_format(factor), StatusText = true})
 							end
 						end
 					end
@@ -271,6 +332,12 @@ function level_up_hand(card, hand, instant, amount)
 							return true end }))
 							update_hand_text({delay = 0}, {mult = op .. number_format(factor), StatusText = true})
 							update_hand_text({delay = HoldDelay}, {mult = G.GAME.hands[hand].mult})
+						elseif hand == G.handlist[#G.handlist] then
+							G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
+								play_sound('multhit2')
+								card:juice_up(0.8, 0.5)
+							return true end }))
+							update_hand_text({delay = HoldDelay}, {mult = op .. number_format(factor), StatusText = true})
 						end
 					end
 					if SMODS.Mods['Talisman'] then
@@ -292,6 +359,12 @@ function level_up_hand(card, hand, instant, amount)
 								return true end }))
 								update_hand_text({delay = 0}, {mult = op .. number_format(factor), StatusText = true})
 								update_hand_text({delay = HoldDelay}, {mult = G.GAME.hands[hand].mult})
+							elseif hand == G.handlist[#G.handlist] then
+								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
+									play_sound('talisman_emult')
+									card:juice_up(0.8, 0.5)
+								return true end }))
+								update_hand_text({delay = HoldDelay}, {mult = op .. number_format(factor), StatusText = true})
 							end
 						end
 						if obj.ee_mult then
@@ -312,6 +385,12 @@ function level_up_hand(card, hand, instant, amount)
 								return true end }))
 								update_hand_text({delay = 0}, {mult = op .. number_format(factor), StatusText = true})
 								update_hand_text({delay = HoldDelay}, {mult = G.GAME.hands[hand].mult})
+							elseif hand == G.handlist[#G.handlist] then
+								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
+									play_sound('talisman_eemult')
+									card:juice_up(0.8, 0.5)
+								return true end }))
+								update_hand_text({delay = HoldDelay}, {mult = op .. number_format(factor), StatusText = true})
 							end
 						end
 						if obj.eee_mult then
@@ -332,6 +411,12 @@ function level_up_hand(card, hand, instant, amount)
 								return true end }))
 								update_hand_text({delay = 0}, {mult = op .. number_format(factor), StatusText = true})
 								update_hand_text({delay = HoldDelay}, {mult = G.GAME.hands[hand].mult})
+							elseif hand == G.handlist[#G.handlist] then
+								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
+									play_sound('talisman_eemult')
+									card:juice_up(0.8, 0.5)
+								return true end }))
+								update_hand_text({delay = HoldDelay}, {mult = op .. number_format(factor), StatusText = true})
 							end
 						end
 						if obj.hyper_mult and type(obj.hyper_mult) == 'table' then
@@ -352,6 +437,12 @@ function level_up_hand(card, hand, instant, amount)
 								return true end }))
 								update_hand_text({delay = 0}, {mult = op .. number_format(factor), StatusText = true})
 								update_hand_text({delay = HoldDelay}, {mult = G.GAME.hands[hand].mult})
+							elseif hand == G.handlist[#G.handlist] then
+								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
+									play_sound('talisman_eemult')
+									card:juice_up(0.8, 0.5)
+								return true end }))
+								update_hand_text({delay = HoldDelay}, {mult = op .. number_format(factor), StatusText = true})
 							end
 						end
 					end
@@ -388,7 +479,7 @@ function create_card(_type, area, legendary, _rarity, skip_materialize, soulable
 		blockable = false,
 		func = function()
 			local obj = card.config.center
-			if not card.edition and (((_type == 'Planet' or _type == 'Planet_dx' or _type == 'planet_ex' or _type == 'planet_gx') and (obj.aurinko or (card.ability.consumeable and card.ability.consumeable.hand_type))) or AurinkoWhitelist[obj.key]) then
+			if not card.edition and (((_type == 'Planet' or _type == 'planet_ex' or _type == 'planet_gx') and (obj.aurinko or (card.ability.consumeable and card.ability.consumeable.hand_type))) or AurinkoWhitelist[obj.key]) then
 				local edition = poll_edition('edi'..(key_append or '')..tostring(G.GAME.round_resets.ante), math.max(1, math.min(1 + ((G.GAME.round_resets.ante / 2) - 0.5), 10)), true)
 				if edition and not edition.aurinko_blacklist then
 					card:set_edition(edition)
@@ -399,4 +490,3 @@ function create_card(_type, area, legendary, _rarity, skip_materialize, soulable
 	}))
 	return card
 end
-
