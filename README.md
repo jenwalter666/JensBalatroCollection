@@ -24,6 +24,7 @@ Jen's Almanac **requires**:
 - Cryptid
 - Incantation
 - Talisman (Set score limit to OmegaNum (e10##1000))
+- JenLib
 
 Jen's Almanac can work without these mods, but some content is restricted without them:
 - SDM_0's Stuff
