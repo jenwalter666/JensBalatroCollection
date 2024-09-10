@@ -161,7 +161,7 @@ function level_up_hand(card, hand, instant, amount)
 								play_sound('chips1')
 								card:juice_up(0.8, 0.5)
 							return true end }))
-							update_hand_text({delay = HoldDelay}, {chips = (factor > 0 and '' or '-') .. number_format(math.abs(factor)), StatusText = true})
+							update_hand_text({delay = HoldDelay}, {chips = (factor > 0 and '+' or '-') .. number_format(math.abs(factor)), StatusText = true})
 						end
 					end
 					if obj.mult then
@@ -179,7 +179,7 @@ function level_up_hand(card, hand, instant, amount)
 								play_sound('multhit1')
 								card:juice_up(0.8, 0.5)
 							return true end }))
-							update_hand_text({delay = HoldDelay}, {mult = (factor > 0 and '' or '-') .. number_format(math.abs(factor)), StatusText = true})
+							update_hand_text({delay = HoldDelay}, {mult = (factor > 0 and '+' or '-') .. number_format(math.abs(factor)), StatusText = true})
 						end
 					end
 					if talisman then
