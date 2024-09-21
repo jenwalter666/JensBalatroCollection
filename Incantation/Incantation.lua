@@ -7,7 +7,7 @@
 --- PRIORITY: 89999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
 --- BADGE_COLOR: 000000
 --- PREFIX: inc
---- VERSION: 0.5.3
+--- VERSION: 0.5.4
 --- LOADER_VERSION_GEQ: 1.0.0
 
 Incantation = {consumable_in_use = false, accelerate = false} --will port more things over to this global later, but for now it's going to be mostly empty
@@ -424,6 +424,10 @@ function Card:use_consumeable(area, copier)
 			func = function()
 				Incantation.consumable_in_use = false
 				Incantation.accelerate = false
+				self.cardinuse = nil
+				self.bulkuse = nil
+				self.naivebulkuse = nil
+				self.OverrideBulkUseLimit = nil
 				if obj.keep_on_use and obj:keep_on_use(self) then
 					self.ignorestacking = false
 					self.ability.qty = obj.keep_on_use_retain_stack and qty or (newqty + 1)
@@ -432,10 +436,6 @@ function Card:use_consumeable(area, copier)
 						self:split(newqty, true, true)
 					end
 				end
-				self.cardinuse = nil
-				self.bulkuse = nil
-				self.naivebulkuse = nil
-				self.OverrideBulkUseLimit = nil
 				return true
 			end
 		}))
