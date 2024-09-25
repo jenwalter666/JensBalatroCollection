@@ -6,7 +6,7 @@
 --- MOD_DESCRIPTION: Some functions that I commonly use which some people might find a use for
 --- BADGE_COLOR: 000000
 --- PREFIX: jenlib
---- VERSION: 0.0.2
+--- VERSION: 0.0.3
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --Checks a string against a table of strings
@@ -54,19 +54,30 @@ function scoringcard(context)
 end
 
 function get_favourite_hand()
+	if not G.GAME or not G.GAME.current_round then return 'High Card' end
+	return G.GAME.current_round.most_played_poker_hand
+end
+
+function get_2nd_favourite_hand()
+	if not G.GAME or not G.GAME.current_round then return 'High Card' end
 	local chosen_hand = 'High Card'
-	local highest_played = 0
-	for _, v in ipairs(G.handlist) do
-		if G.GAME.hands[v].played > highest_played then
-			chosen_hand = v
-			highest_played = G.GAME.hands[v].played
+	local _handname, _played, _order = 'High Card', -1, 100
+	for k, v in pairs(G.GAME.hands) do
+		if k ~= G.GAME.current_round.most_played_poker_hand and v.played > _played or (v.played == _played and _order > v.order) then 
+			_played = v.played
+			_handname = k
 		end
 	end
+	chosen_hand = _handname
 	return chosen_hand
 end
 
 function get_favorite_hand() --a british programmer considering americans? how selfless
 	return get_favourite_hand()
+end
+
+function get_2nd_favorite_hand()
+	return get_2nd_favourite_hand()
 end
 
 function get_lowest_level_hand()
@@ -244,7 +255,7 @@ function Card:resize(mod, force_save)
 	end
 end
 
---Tries to reset the card's size, if it's saved
+--Tries to reset the card's size, if saved
 function Card:resetsize()
 	if self.origsize then
 		self:hard_set_T(self.T.x, self.T.y, self.origsize.w, self.origsize.h)
