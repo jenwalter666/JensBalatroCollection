@@ -5,6 +5,8 @@ An assortment of various playing card skins for Balatro.
 Currently there is only one, but there will be more soon.
 
 - **Simplified** : Reduces the card art to be just a symbol accompanied with a letter/number.
+![image](https://github.com/user-attachments/assets/39ee1d46-c6da-4905-8a10-a574e337ce0a)
+![image](https://github.com/user-attachments/assets/b0e0ea26-ce72-457e-a306-9e8c5d609807)
 
 # How to install
 
