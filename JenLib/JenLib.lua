@@ -6,7 +6,7 @@
 --- MOD_DESCRIPTION: Some functions that I commonly use which some people might find a use for
 --- BADGE_COLOR: 000000
 --- PREFIX: jenlib
---- VERSION: 0.1.0
+--- VERSION: 0.1.1
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --Global table, don't modify!
@@ -261,7 +261,7 @@ function Card:resize(mod, force_save)
 	remove_all(self.children)
 	self.children = {}
 	self.children.shadow = Moveable(0, 0, 0, 0)
-	self:set_sprites(self.config.center, batchfind((self.ability or {}).set or '', resize_lookout) and self.config.card)
+	self:set_sprites(self.config.center, jl.bf((self.ability or {}).set or '', resize_lookout) and self.config.card)
 	if self.area then
 		if (G.shop_jokers and self.area == G.shop_jokers) or (G.shop_booster and self.area == G.shop_booster) or (G.shop_vouchers and self.area == G.shop_vouchers) then
 			create_shop_card_ui(self)
@@ -276,7 +276,7 @@ function Card:resetsize()
 		remove_all(self.children)
 		self.children = {}
 		self.children.shadow = Moveable(0, 0, 0, 0)
-		self:set_sprites(self.config.center, batchfind((self.ability or {}).set or '', resize_lookout) and self.config.card)
+		self:set_sprites(self.config.center, jl.bf((self.ability or {}).set or '', resize_lookout) and self.config.card)
 		if self.area then
 			if (G.shop_jokers and self.area == G.shop_jokers) or (G.shop_booster and self.area == G.shop_booster) or (G.shop_vouchers and self.area == G.shop_vouchers) then
 				create_shop_card_ui(self)
