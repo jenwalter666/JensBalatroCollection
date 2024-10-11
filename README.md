@@ -21,20 +21,20 @@ Make sure that **none** of the mods included in this repository are nested. They
 
 # Jen's Almanac Compatibility
 Jen's Almanac **requires**:
-- Cryptid
-- Incantation
-- Talisman (Set score limit to OmegaNum (e10##1000))
-- JenLib
+- [Cryptid](https://github.com/MathIsFun0/Cryptid)
+- [Incantation](https://github.com/jenwalter666/JensBalatroCollection/tree/main/Incantation)
+- [Talisman](https://github.com/MathIsFun0/Talisman) (Set score limit to OmegaNum (e10##1000))
+- [JenLib](https://github.com/jenwalter666/JensBalatroCollection/tree/main/JenLib-old) <!--- Link to jenLib-old till 0.1.0 -->
 
 Jen's Almanac can work without these mods, but some content is restricted without them:
-- SDM_0's Stuff
-- Fusion Jokers
+- [SDM_0's Stuff](https://github.com/SDM0/SDM_0-s-Stuff)
+- [Fusion Jokers](https://github.com/itayfeder/Fusion-Jokers)
 
 Jen's Almanac synergises well with these mods:
-- Aurinko
-- Nopeus
-- Cartomancer
-- DebugPlus
-- MoreJokerPacks
-- Galdur
-- Handy
+- [Aurinko](https://github.com/jenwalter666/JensBalatroCollection/tree/main/Aurinko)
+- [Nopeus](https://github.com/jenwalter666/JensBalatroCollection/tree/main/Nopeus)
+- [Cartomancer](https://github.com/stupxd/Cartomancer)
+- [DebugPlus](https://github.com/WilsontheWolf/DebugPlus)
+- [MoreJokerPacks](https://github.com/Samario1/MoreJokerPacks)
+- [Galdur](https://github.com/Eremel/Galdur)
+- [Handy](https://github.com/SleepyG11/HandyBalatro)
