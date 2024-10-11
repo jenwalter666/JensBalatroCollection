@@ -24,7 +24,7 @@ Jen's Almanac **requires**:
 - [Cryptid](https://github.com/MathIsFun0/Cryptid)
 - [Incantation](https://github.com/jenwalter666/JensBalatroCollection/tree/main/Incantation)
 - [Talisman](https://github.com/MathIsFun0/Talisman) (Set score limit to OmegaNum (e10##1000))
-- [JenLib](https://github.com/jenwalter666/JensBalatroCollection/tree/main/JenLib-old) <!--- Link to jenLib-old till 0.1.0 -->
+- [JenLib](https://github.com/jenwalter666/JensBalatroCollection/tree/main/JenLib_Old) <!--- Link to jenLib-old till 0.1.0 -->
 
 Jen's Almanac can work without these mods, but some content is restricted without them:
 - [SDM_0's Stuff](https://github.com/SDM0/SDM_0-s-Stuff)
