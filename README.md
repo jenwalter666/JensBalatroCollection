@@ -1,3 +1,6 @@
+# Support me and my work on Ko-Fi
+https://ko-fi.com/jenwalter
+
 # JensBalatroCollection
 Collection of mods I've made for Balatro
 
