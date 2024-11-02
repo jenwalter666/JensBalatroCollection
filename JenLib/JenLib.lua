@@ -6,7 +6,7 @@
 --- MOD_DESCRIPTION: Some functions that I commonly use which some people might find a use for
 --- BADGE_COLOR: 000000
 --- PREFIX: jenlib
---- VERSION: 0.1.2
+--- VERSION: 0.1.3
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --Global table, don't modify!
@@ -23,10 +23,11 @@ function jl.bf(needle, haystack)
 end
 
 --Returns the first instance of a given card by ID, or nil if the card doesn't exist
-function jl.fc(id)
-	if not G.jokers then return end
-	for i = 1, #G.jokers.cards do
-		if G.jokers.cards[i].config.center.key == id then return G.jokers.cards[i] end
+function jl.fc(id, area)
+	if not area then area = 'jokers' end
+	if not G[area] then return end
+	for i = 1, #G[area].cards do
+		if G[area].cards[i].config.center.key == id then return G[area].cards[i] end
 	end
 	return
 end
