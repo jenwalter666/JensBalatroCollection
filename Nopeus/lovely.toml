@@ -14,10 +14,18 @@ match_indent = true
 
 [[patches]]
 [patches.pattern]
+target = "functions/common_events.lua"
+pattern = "func = (function() check_for_unlock{type = 'upgrade_hand', hand = hand, level = G.GAME.hands[hand].level} return true end)"
+position = "before"
+payload = "blocking = G.SETTINGS.FASTFORWARD < 3,"
+match_indent = true
+
+[[patches]]
+[patches.pattern]
 target = "game.lua"
 pattern = "for k, v in pairs(settings_file) do"
 position = "after"
-payload = "if k == 'FASTFORWARD' then v = math.min(2, v) end"
+payload = "if k == 'FASTFORWARD' then v = math.min(3, v) end"
 match_indent = true
 
 [[patches]]
