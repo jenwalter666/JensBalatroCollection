@@ -6,13 +6,14 @@
 --- MOD_DESCRIPTION: An extension of MoreSpeeds which includes more options, including a new speed which makes the event manager run as fast as it can.
 --- BADGE_COLOR: ff3c3c
 --- PREFIX: nopeus
---- VERSION: 2.1.0
+--- VERSION: 2.2.0
 --- LOADER_VERSION_GEQ: 1.0.0
 
 Nopeus = {
 	Off = 'Off',
 	Planets = 'Planets',
-	On = 'Everything',
+	On = 'Everything (Standard)',
+	Optimised = 'Everything (Skip Misc.)',
 	Unsafe = 'Unsafe',
 	AllText = 'All',
 	NoAgain = 'No "Again!"',
@@ -20,8 +21,12 @@ Nopeus = {
 	NoText = 'None'
 }
 
+function Nopeus.FF()
+	return G.SETTINGS.FASTFORWARD
+end
+
 G.FUNCS.change_fastforward = function(args)
-  G.SETTINGS.FASTFORWARD = (args.to_val == Nopeus.Planets and 1 or args.to_val == Nopeus.On and 2 or args.to_val == Nopeus.Unsafe and 3 or 0)
+  G.SETTINGS.FASTFORWARD = (args.to_val == Nopeus.Planets and 1 or args.to_val == Nopeus.On and 2 or args.to_val == Nopeus.Optimised and 3 or args.to_val == Nopeus.Unsafe and 4 or 0)
 end
 
 G.FUNCS.change_statustext = function(args)
@@ -53,6 +58,17 @@ function G.UIDEF.nopeus_options()
 	return speeds
 end
 
+local uhtr = update_hand_text
+function update_hand_text(config, vals)
+	if G.SETTINGS.FASTFORWARD >= 3 then
+		config.immediate = true
+		config.delay = 0
+		config.blocking = false
+		vals.StatusText = nil
+	end
+	return uhtr(config, vals)
+end
+
 local lvupref = level_up_hand
 function level_up_hand(card, hand, instant, amount)
 	if G.SETTINGS.FASTFORWARD > 0 and not instant then
@@ -74,7 +90,7 @@ end
 function G.UIDEF.nopeus_fastforward_options()
 	if not G.SETTINGS.FASTFORWARD then G.SETTINGS.FASTFORWARD = 0 end
 	if not G.SETTINGS.STATUSTEXT then G.SETTINGS.STATUSTEXT = 0 end
-	local ff = create_option_cycle({label = 'Fast-Forward', colour = G.C.PURPLE, scale = 0.8, options = {Nopeus.Off, Nopeus.Planets, Nopeus.On, Nopeus.Unsafe}, opt_callback = 'change_fastforward', current_option = (
+	local ff = create_option_cycle({label = 'Fast-Forward', colour = G.C.PURPLE, w = 5, scale = 0.8, options = {Nopeus.Off, Nopeus.Planets, Nopeus.On, Nopeus.Optimised, Nopeus.Unsafe}, opt_callback = 'change_fastforward', current_option = (
 		G.SETTINGS.FASTFORWARD + 1
 	)})
 	
@@ -84,7 +100,7 @@ end
 function G.UIDEF.nopeus_statustext_options()
 	if not G.SETTINGS.FASTFORWARD then G.SETTINGS.FASTFORWARD = 0 end
 	if not G.SETTINGS.STATUSTEXT then G.SETTINGS.STATUSTEXT = 0 end
-	local st = create_option_cycle({label = 'Card Text Popups', colour = G.C.FILTER, w = 3, scale = 0.8, options = {Nopeus.AllText, Nopeus.NoAgain, Nopeus.NoMisc, Nopeus.NoText}, opt_callback = 'change_statustext', current_option = (
+	local st = create_option_cycle({label = 'Card Text Popups', colour = G.C.FILTER, w = 5, scale = 0.8, options = {Nopeus.AllText, Nopeus.NoAgain, Nopeus.NoMisc, Nopeus.NoText}, opt_callback = 'change_statustext', current_option = (
 		G.SETTINGS.STATUSTEXT + 1
 	)})
 	
@@ -93,7 +109,7 @@ end
 
 local cest = card_eval_status_text
 function card_eval_status_text(card, eval_type, amt, percent, dir, extra)
-	if G.SETTINGS.STATUSTEXT == 3 or G.SETTINGS.FASTFORWARD == 3 then
+	if G.SETTINGS.STATUSTEXT == 3 or G.SETTINGS.FASTFORWARD > 3 then
 		return
 	elseif G.SETTINGS.STATUSTEXT == 2 then
 		if eval_type == 'extra' then return end
@@ -116,14 +132,14 @@ function Event:init(config)
     self.trigger = config.trigger or 'immediate'
 	if not G.SETTINGS.FASTFORWARD then G.SETTINGS.FASTFORWARD = 0 end
 	if not G.SETTINGS.STATUSTEXT then G.SETTINGS.STATUSTEXT = 0 end
-	if G.SETTINGS.FASTFORWARD > 2 then
+	if G.SETTINGS.FASTFORWARD > 3 then
 		self.blocking = false
     elseif config.blocking ~= nil then 
         self.blocking = config.blocking
     else
         self.blocking = true
     end
-	if G.SETTINGS.FASTFORWARD > 2 then
+	if G.SETTINGS.FASTFORWARD > 3 then
 		self.blockable = false
     elseif config.blockable ~= nil then 
         self.blockable = config.blockable
