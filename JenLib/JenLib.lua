@@ -6,7 +6,7 @@
 --- MOD_DESCRIPTION: Some functions that I commonly use which some people might find a use for
 --- BADGE_COLOR: 000000
 --- PREFIX: jenlib
---- VERSION: 0.2.0
+--- VERSION: 0.2.1
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --Global table, don't modify!
@@ -53,20 +53,7 @@ end
 function jl.jokers(data)
 	if G.jokers and #G.jokers.cards > 0 then
 		for i = 1, #G.jokers.cards do
-			local effects = G.jokers.cards[i]:calculate_joker(data)
-			if effects and effects.joker_repetitions then
-				rep_list = effects.joker_repetitions
-				data.retrigger_joker = true
-				for z=1, #rep_list do
-					if type(rep_list[z]) == 'table' and rep_list[z].repetitions then
-						for r=1, rep_list[z].repetitions do
-							card_eval_status_text(rep_list[z].card, 'jokers', nil, nil, nil, rep_list[z])
-							G.jokers.cards[i]:calculate_joker(data)
-						end
-					end
-				end
-				data.retrigger_joker = nil
-			end
+			G.jokers.cards[i]:calculate_joker(data)
 		end
 	end
 end
