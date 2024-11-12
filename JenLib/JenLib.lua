@@ -6,7 +6,7 @@
 --- MOD_DESCRIPTION: Some functions that I commonly use which some people might find a use for
 --- BADGE_COLOR: 000000
 --- PREFIX: jenlib
---- VERSION: 0.2.1
+--- VERSION: 0.2.2
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --Global table, don't modify!
@@ -30,6 +30,23 @@ function jl.fc(id, area)
 		if G[area].cards[i].config.center.key == id then return G[area].cards[i] end
 	end
 	return
+end
+
+local invalid_values = {
+	'naneinf',
+	'nan',
+	'inf',
+	'-naneinf',
+	'-nan',
+	'-inf',
+	'infinity',
+	'nil'
+}
+
+--Checks if a number is not an actual number (e.g. nan, inf)
+function jl.invalid_number(num)
+	local str = string.lower(number_format(num))
+	return jl.bf(num, invalid_values)
 end
 
 --Easier way of doing chance rolls
@@ -203,8 +220,9 @@ function Card:nosuitandrank() --alias
 end
 
 --Gets tiring to type all the G.E_MANAGER mumbojumbo every time for things that are simple
-function Q(fc, de, tr, bl, ba)
+function Q(fc, de, t, tr, bl, ba)
 	G.E_MANAGER:add_event(Event({
+		timer = t,
 		trigger = tr,
 		delay = de,
 		blockable = bl,
@@ -280,7 +298,7 @@ function Card:resize(mod, force_save)
 	remove_all(self.children)
 	self.children = {}
 	self.children.shadow = Moveable(0, 0, 0, 0)
-	self:set_sprites(self.config.center, jl.bf((self.ability or {}).set or '', resize_lookout) and self.config.card)
+	self:set_sprites(self.config.center, self.base.id and self.config.card)
 	if self.area then
 		if (G.shop_jokers and self.area == G.shop_jokers) or (G.shop_booster and self.area == G.shop_booster) or (G.shop_vouchers and self.area == G.shop_vouchers) then
 			create_shop_card_ui(self)
