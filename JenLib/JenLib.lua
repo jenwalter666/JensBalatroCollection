@@ -289,8 +289,6 @@ function Card:spritepos(child, X, Y)
 	end
 end
 
-local resize_lookout = {'Default', 'Enhanced'}
-
 --Multiplies the card's size by mod
 function Card:resize(mod, force_save)
 	if force_save or not self.origsize then self.origsize = {w = self.T.w, h = self.T.h} end
