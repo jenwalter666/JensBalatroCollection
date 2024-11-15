@@ -6,7 +6,7 @@
 --- MOD_DESCRIPTION: Some functions that I commonly use which some people might find a use for
 --- BADGE_COLOR: 000000
 --- PREFIX: jenlib
---- VERSION: 0.2.2
+--- VERSION: 0.2.3
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --Global table, don't modify!
@@ -20,6 +20,16 @@ function jl.bf(needle, haystack)
 		if type(v) == 'string' and v == needle then return true end
 	end
 	return false
+end
+
+--A more minimalist function for changing the hand UI
+function jl.h(name, chip, mul, lv, notif, snd, vol, pit, de)
+	update_hand_text({sound = type(name) == 'string' and snd or type(name) == 'nil' and 'button', volume = vol or 0.7, pitch = pit or 0.8, delay = de or 0.3}, {handname=name or '????', chips = chip or '?', mult = mul or '?', level=lv or '?', StatusText = notif})
+end
+
+--Fast and easy-to-type function to clear the hand text
+function jl.ch()
+	update_hand_text({sound = 'button', volume = 0.7, pitch = 1.1, delay = 0}, {mult = 0, chips = 0, handname = '', level = ''})
 end
 
 --Returns the first instance of a given card by ID, or nil if the card doesn't exist
