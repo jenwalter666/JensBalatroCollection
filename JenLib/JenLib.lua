@@ -29,7 +29,9 @@ end
 
 --Updates the hand text to a specified hand
 function jl.th(hand)
-	if G.GAME.hands[hand or 'NO_HAND_SPECIFIED'] then
+	if hand == 'all' or hand == 'allhands' or hand == 'all_hands' then
+		jl.h(localize('k_all_hands'), '...', '...', '')
+	elseif G.GAME.hands[hand or 'NO_HAND_SPECIFIED'] then
 		jl.h(localize(hand, 'poker_hands'), G.GAME.hands[hand].chips, G.GAME.hands[hand].mult, G.GAME.hands[hand].level)
 	else
 		jl.h('ERROR', 'ERROR', 'ERROR', 'ERROR')
