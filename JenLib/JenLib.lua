@@ -6,7 +6,7 @@
 --- MOD_DESCRIPTION: Some functions that I commonly use which some people might find a use for
 --- BADGE_COLOR: 000000
 --- PREFIX: jenlib
---- VERSION: 0.2.3
+--- VERSION: 0.2.4
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --Global table, don't modify!
@@ -25,6 +25,15 @@ end
 --A more minimalist function for changing the hand UI
 function jl.h(name, chip, mul, lv, notif, snd, vol, pit, de)
 	update_hand_text({sound = type(name) == 'string' and snd or type(name) == 'nil' and 'button', volume = vol or 0.7, pitch = pit or 0.8, delay = de or 0.3}, {handname=name or '????', chips = chip or '?', mult = mul or '?', level=lv or '?', StatusText = notif})
+end
+
+--Updates the hand text to a specified hand
+function jl.th(hand)
+	if G.GAME.hands[hand] then
+		jl.h(localize(hand, 'poker_hands'), G.GAME.hands[hand].chips, G.GAME.hands[hand].mult, G.GAME.hands[hand].level)
+	else
+		jl.h('ERROR', 'ERROR', 'ERROR', 'ERROR')
+	end
 end
 
 --Fast and easy-to-type function to clear the hand text
