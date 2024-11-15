@@ -8,6 +8,7 @@ Collection of mods I've made for Balatro
 - **Incantation** : Consolidates identical consumables into a single card to save space.
 - **Loop** : Adds a voucher which unredeems certain vouchers to let them be re-redeemed again for stacking effects.
 - **Nopeus** : Adds more speed options.
+- **JenLib** : A general-purpose Balatro library that contains some useful functions, and can help with simplifying your code
 - **Jen's Almanac** : An extension of the mod [Cryptid](https://github.com/MathIsFun0/Cryptid) which causes complete pandemonium.
 Read more below for info about compatibility on Almanac
 
