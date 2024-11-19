@@ -7,7 +7,7 @@
 --- PRIORITY: 89999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
 --- BADGE_COLOR: 000000
 --- PREFIX: inc
---- VERSION: 0.5.4
+--- VERSION: 0.5.5
 --- LOADER_VERSION_GEQ: 1.0.0
 
 Incantation = {consumable_in_use = false, accelerate = false} --will port more things over to this global later, but for now it's going to be mostly empty
@@ -211,7 +211,7 @@ function Card:subQty(quantity, dont_dissolve)
 		self.ignorestacking = true
 		self:start_dissolve()
 	else
-		self:setQty(math.max(0, self:getQty() + math.ceil(quantity)))
+		self:setQty(math.max(0, self:getQty() - math.ceil(quantity)))
 	end
 end
 
@@ -444,7 +444,7 @@ end
 
 local startdissolveref = Card.start_dissolve
 function Card:start_dissolve(a,b,c,d)
-	if self.ability.qty and self.ability.qty > 1 and Incantation.consumable_in_use and not self.ignore_incantation_consumable_in_use then return end
+	if self.ability.qty and self.ability.qty > 1 and Incantation.consumable_in_use and self.cardinuse and not self.ignore_incantation_consumable_in_use then return end
 	self.ignorestacking = true
 	return startdissolveref(self,a,b,c,d)
 end
@@ -484,10 +484,12 @@ G.FUNCS.can_split_card = function(e)
 end
 
 function Card:MergeAvailable()
-	for k, v in pairs(G.consumeables.cards) do
-		if v then
-			if v ~= self and (v.config or {}).center_key == (self.config or {}).center_key and ((v.edition or {}).type or '') == ((self.edition or {}).type or '') then
-				return true
+	if (self.config or {}).consumeable then
+		for k, v in pairs(G.consumeables.cards) do
+			if v then
+				if v ~= self and (v.config or {}).center_key == (self.config or {}).center_key and ((v.edition or {}).type or '') == ((self.edition or {}).type or '') then
+					return true
+				end
 			end
 		end
 	end
@@ -523,7 +525,7 @@ end
 G.FUNCS.can_use_every_planet = function(e)
 	local card = e.config.ref_table
 	local obj = card.config.center
-	if (((card.config or {}).center or {}).set or '') == 'Planet' and card:CanBulkUse() and CanUseStackButtons() and not card.ignorestacking then
+	if (((card.config or {}).center or {}).set or '') == 'Planet' and card:CanBulkUse() and CanUseStackButtons() and not card.ignorestacking and not obj.ignore_allplanets then
         e.config.colour = G.C.SECONDARY_SET.Planet
         e.config.button = 'use_every_planet'
 		e.states.visible = true
@@ -588,7 +590,7 @@ function runthrough_planets()
 				end
 				for i = 1, #G.jokers.cards do
 					local effects = G.jokers.cards[i]:calculate_joker({using_consumeable = true, consumeable = card})
-					if (SMODS.Mods['Cryptid'] or {}).can_load and effects and effects.joker_repetitions then
+					if effects and effects.joker_repetitions then
 						rep_list = effects.joker_repetitions
 						for z=1, #rep_list do
 							if type(rep_list[z]) == 'table' and rep_list[z].repetitions then
@@ -607,6 +609,16 @@ function runthrough_planets()
 				end}))
 			end
 		end
+		G.E_MANAGER:add_event(Event({
+			trigger = 'after',
+			delay = 0.1,
+			blockable = true,
+			func = function()
+				Incantation.consumable_in_use = false
+				Incantation.accelerate = false
+				return true
+			end
+		}))
 	end
 end
 
@@ -616,7 +628,7 @@ G.FUNCS.use_every_planet = function(e)
 		local card = G.consumeables.cards[i]
 		if card then
 			local obj = card.config.center
-			if (((card.config or {}).center or {}).set or '') == 'Planet' and (not obj.can_use or obj:can_use(card)) then
+			if (((card.config or {}).center or {}).set or '') == 'Planet' and (not obj.can_use or obj:can_use(card)) and not obj.ignore_allplanets then
 				table.insert(targets, card)
 			end
 		end
@@ -664,7 +676,7 @@ function Card:create_stack_display()
 					r = 0.001,
 					padding = 0.1,
 					align = 'cm',
-					colour = adjust_alpha(darken(G.C.BLACK, 0.2), 0.4),
+					colour = adjust_alpha(darken(G.C.BLACK, 0.2), 0.6),
 					shadow = false,
 					func = 'disablestackdisplay',
 					ref_table = self
@@ -690,7 +702,7 @@ function Card:create_stack_display()
 				}
 			},
 			config = {
-				align = 'tm',
+				align = 'cm',
 				bond = 'Strong',
 				parent = self
 			},
