@@ -1075,7 +1075,7 @@ function Tag:subQty(quantity, dont_dissolve)
 		self.ignorestacking = true
 		self:nope()
 	else
-		self:setQty(math.max(0, self:getQty() + math.ceil(quantity)))
+		self:setQty(math.max(0, self:getQty() - math.ceil(quantity)))
 	end
 end
 
@@ -1092,31 +1092,35 @@ function Tag:try_merge()
         -- Find this card
         for i = #G.GAME.tags, 2, -1 do
             if G.GAME.tags[i] == self then
-                local v = G.GAME.tags[i-1]
-                --TODO: check if abilities are equal (e.g. orbital tags)
-                if v ~= self and not v.nomerging and not v.ignorestacking and v.key == self.key and (v:getQty() < (UseStackCap and MaxStack or HardLimit)) then
-                    local space = (UseStackCap and MaxStack or HardLimit) - (v:getQty())
-                    G.E_MANAGER:add_event(Event({
-						trigger = 'after',
-						func = (function()
-							v.ability.qty = (v:getQty()) + math.min((self:getQty()), space)
-							v.HUD_stack = v.HUD_stack or v:create_stack_display()
-							v:juice_up(0.5,0.5)
-							play_sound('card1')
-							if (self:getQty()) - space < 1 then
-								self.ignorestacking = true
-								self:yep("MERGED",G.C.BLUE) --msg should probably be removed later
-								return true
-							else
-								G.E_MANAGER:add_event(Event({
-									trigger = 'after',
-									func = (function()
-										self.ability.qty = (self:getQty()) - space
-									end)
-								}))
-							end
-						end)
-					}))
+				local merge_max = i
+				local is_mergable = true
+				while is_mergable do
+					merge_max = merge_max - 1
+					if merge_max < 1 then break end
+					local v = G.GAME.tags[merge_max]
+					--TODO: check if abilities are equal (e.g. orbital tags)
+					if not (v ~= self and not v.start_dissolve and not v.nomerging and not v.ignorestacking and v.key == self.key and (v:getQty() < (UseStackCap and MaxStack or HardLimit))) then
+						is_mergable = false
+					end
+				end
+				if merge_max < i - 1 then
+					merge_max = merge_max + 1
+					--merge_max+1 up to i are being merged into merge_max
+					local v = G.GAME.tags[merge_max]
+                	local space = (UseStackCap and MaxStack or HardLimit)
+					v.HUD_stack = v.HUD_stack or v:create_stack_display()
+                    for m = i, merge_max+1, -1 do
+						local merged_tag = G.GAME.tags[m]
+						v.ability.qty = math.min((v:getQty() + merged_tag:getQty()), space)
+					end
+					v:juice_up(0.5,0.5)
+					play_sound('card1')
+					for m = i, merge_max+1, -1 do
+						local merged_tag = G.GAME.tags[m]
+						merged_tag.ignorestacking = true
+						merged_tag.bulk_triggered = true
+						merged_tag:yep("MERGED",G.C.BLUE) --msg should probably be removed later
+					end
 					return true
                 end
             end
@@ -1125,7 +1129,7 @@ function Tag:try_merge()
 end
 
 function Tag:create_stack_display()
-	if not self:try_merge() and not self.HUD_stack and self:CanStack() then
+	if not self.HUD_stack then --and not self:try_merge() and self:CanStack() then
 		self.HUD_stack = UIBox {
 			definition = {
 				n = G.UIT.ROOT,
@@ -1179,62 +1183,23 @@ end
 local at = add_tag
 function add_tag(t)
     at(t)
-    t:try_merge()
+	if t:getQty() > 1 then t:create_stack_display() end
+	t:try_merge()
 end
 
-local tyep = Tag.yep
-function Tag:yep(message, _colour, func)
-	stop_use()
-
-    G.E_MANAGER:add_event(Event({
-        delay = 0.4,
-        trigger = 'after',
-        func = (function()
-            attention_text({
-                text = message,
-                colour = G.C.WHITE,
-                scale = 1, 
-                hold = 0.3/G.SETTINGS.GAMESPEED,
-                cover = self.HUD_tag,
-                cover_colour = _colour or G.C.GREEN,
-                align = 'cm',
-                })
-            play_sound('generic1', 0.9 + math.random()*0.1, 0.8)
-            play_sound('holo1', 1.2 + math.random()*0.1, 0.4)
-            return true
-        end)
-    }))
-	if self.ability.qty and self.ability.qty > 1 then
-		self.ability.qty = self.ability.qty - 1
-		G.E_MANAGER:add_event(Event({
-			func = func
-		}))
-		return true
-	end
+local trem = Tag.remove
+function Tag:remove()
 	if self.HUD_stack then
 		self.HUD_stack:remove()
 	end
-    G.E_MANAGER:add_event(Event({
-        func = (function()
-            self.HUD_tag.states.visible = false
-            return true
-        end)
-    }))
-    G.E_MANAGER:add_event(Event({
-        func = func
-    }))
-    
-    G.E_MANAGER:add_event(Event({
-        trigger = 'after',
-        delay = 0.7,
-        func = (function()
-            self:remove()
-            return true
-        end)
-    }))
+	trem(self)
 end
 
-local tnope = Tag.nope
+local tatr = Tag.apply_to_run
+function Tag:apply_to_run(_context)
+	tatr(self, _context)
+end
+
 function Tag:nope()
 	G.E_MANAGER:add_event(Event({
         delay = 0.2,
@@ -1253,10 +1218,11 @@ function Tag:nope()
             return true
         end)
     }))
-	if self:getQty() > 1 then
-		self:setQty(self:getQty() - 1)
+	if not self.bulk_triggered and self:getQty() > 1 then
+		self:subQty(1)
 		return true
 	end
+	self.start_dissolve = true
 	if self.HUD_stack then
 		self.HUD_stack:remove()
 	end
@@ -1280,40 +1246,95 @@ function Tag:nope()
     }))
 end
 
+function Tag:yep(message, _colour, func)
+	stop_use()
+
+    G.E_MANAGER:add_event(Event({
+        delay = 0.4,
+        trigger = 'after',
+        func = (function()
+            attention_text({
+                text = message,
+                colour = G.C.WHITE,
+                scale = 1, 
+                hold = 0.3/G.SETTINGS.GAMESPEED,
+                cover = self.HUD_tag,
+                cover_colour = _colour or G.C.GREEN,
+                align = 'cm',
+                })
+            play_sound('generic1', 0.9 + math.random()*0.1, 0.8)
+            play_sound('holo1', 1.2 + math.random()*0.1, 0.4)
+            return true
+        end)
+    }))
+	if not self.bulk_triggered and self:getQty() > 1 then
+		local function func2()
+			if func then func() end
+			self:subQty(1)
+			return true
+		end
+		G.E_MANAGER:add_event(Event({
+			func = func2
+		}))
+		return true
+	end
+	self.start_dissolve = true
+	if self.HUD_stack then
+		self.HUD_stack:remove()
+	end
+    G.E_MANAGER:add_event(Event({
+        func = (function()
+            self.HUD_tag.states.visible = false
+            return true
+        end)
+    }))
+    G.E_MANAGER:add_event(Event({
+        func = func
+    }))
+    
+    G.E_MANAGER:add_event(Event({
+        trigger = 'after',
+        delay = 0.7,
+        func = (function()
+            self:remove()
+            return true
+        end)
+    }))
+end
+
 local tatr = Tag.apply_to_run
 function Tag:apply_to_run(_context)
-	if self.triggered then return end
+	if self.triggered or self.bulk_triggered or self.start_dissolve then return end
 	-- Hardcode some tags/contexts that don't play nice with the new system
-	if self.config.type == "eval" and _context.type == 'eval' then 
-		local qtyRef = self:getQty()
-		self:setQty(1)
-		local ret = tatr(self, _context)
-		if ret and ret.dollars then
-			ret.dollars = ret.dollars * qtyRef
-			if qtyRef > 1 then
-				ret.condition = ret.condition .. " (X" .. qtyRef .. ")"
-			end
-		end
-		if not ret then self:setQty(qtyRef) end
-		return ret
+	if _context.type == 'eval' and self.key == "tag_investment" and G.GAME.last_blind and G.GAME.last_blind.boss then 
+		local qty = self:getQty()
+		self.bulk_triggered = true
+		self:yep('+', G.C.GOLD,function() 
+			return true
+		end)
+		return {
+			dollars = self.config.dollars * qty,
+			condition = localize('ph_defeat_the_boss').." (X"..qty..")",
+			pos = self.pos,
+			tag = self
+		}
 	end
-	if self.config.type == "tag_add" and self.name == 'Double Tag' and _context.type == "tag_add" and _context.tag.key ~= 'tag_double' then
+	if _context.type == "tag_add" and self.key == "tag_double" and _context.tag.key ~= "tag_double" then
 		local lock = self.ID
-		local qtyRef = self:getQty()
-		self:setQty(1)
+		local qty = self:getQty()
 		G.CONTROLLER.locks[lock] = true
+		self.bulk_triggered = true
 		self:yep('+', G.C.BLUE,function()
 			if _context.tag.ability and _context.tag.ability.orbital_hand then
 				G.orbital_hand = _context.tag.ability.orbital_hand
 			end
 			local t = Tag(_context.tag.key)
-			t.ability.qty = qtyRef
+			t:setQty(qty)
 			add_tag(t)
 			G.orbital_hand = nil
 			G.CONTROLLER.locks[lock] = nil
 			return true
 		end)
-		self.triggered = true
 		return true
 	end
 	--bulk calculate tags
@@ -1334,10 +1355,11 @@ function Tag:apply_to_run(_context)
 				self.triggered = false
 			end
 		end
-		return
+		self.bulk_triggered = true
+		return true
 	end
 	tatr(self, _context)
 	if self:getQty() > 0 then
-		self.triggered = false --don't prevent it from triggering again
+		self.triggered = false
 	end
 end
