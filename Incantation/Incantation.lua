@@ -1119,7 +1119,7 @@ function Tag:try_merge()
 						local merged_tag = G.GAME.tags[m]
 						merged_tag.ignorestacking = true
 						merged_tag.bulk_triggered = true
-						merged_tag:yep("MERGED",G.C.BLUE) --msg should probably be removed later
+						merged_tag:remove()
 					end
 					return true
                 end
@@ -1186,18 +1186,12 @@ function add_tag(t)
 	if t:getQty() > 1 then t:create_stack_display() end
 	t:try_merge()
 end
-
 local trem = Tag.remove
 function Tag:remove()
 	if self.HUD_stack then
 		self.HUD_stack:remove()
 	end
 	trem(self)
-end
-
-local tatr = Tag.apply_to_run
-function Tag:apply_to_run(_context)
-	tatr(self, _context)
 end
 
 function Tag:nope()
@@ -1268,22 +1262,23 @@ function Tag:yep(message, _colour, func)
         end)
     }))
 	if not self.bulk_triggered and self:getQty() > 1 then
-		local function func2()
-			if func then func() end
-			self:subQty(1)
-			return true
-		end
 		G.E_MANAGER:add_event(Event({
-			func = func2
+			func = func
+		}))
+		G.E_MANAGER:add_event(Event({
+			func = function()
+				self:subQty(1)
+				return true
+			end
 		}))
 		return true
 	end
 	self.start_dissolve = true
-	if self.HUD_stack then
-		self.HUD_stack:remove()
-	end
     G.E_MANAGER:add_event(Event({
         func = (function()
+			if self.HUD_stack then
+				self.HUD_stack:remove()
+			end
             self.HUD_tag.states.visible = false
             return true
         end)
@@ -1306,6 +1301,7 @@ local tatr = Tag.apply_to_run
 function Tag:apply_to_run(_context)
 	if self.triggered or self.bulk_triggered or self.start_dissolve then return end
 	-- Hardcode some tags/contexts that don't play nice with the new system
+	-- todo: implement these with take ownership
 	if _context.type == 'eval' and self.key == "tag_investment" and G.GAME.last_blind and G.GAME.last_blind.boss then 
 		local qty = self:getQty()
 		self.bulk_triggered = true
@@ -1339,27 +1335,20 @@ function Tag:apply_to_run(_context)
 	end
 	--bulk calculate tags
 	local tag = G.P_TAGS[self.key]
-	local vanilla_bulk_apply = {
-		"tag_handy",
-		"tag_garbage",
-		"tag_juggle",
-		"tag_skip",
-		"tag_economy"
-	}
-	if tag and tag.bulk_apply or vanilla_bulk_apply[self.key] then
-		if tag.bulk_apply and type(tag.bulk_apply) == 'function' then
-			tag:bulk_apply(_context)
-		else
-			for i = 1, self:getQty() do
-				tatr(self, _context)
-				self.triggered = false
-			end
+	if not tag and tag.bulk_apply then
+		local ret = tatr(self, _context)
+		if self:getQty() > 0 then
+			self.triggered = false
 		end
-		self.bulk_triggered = true
-		return true
 	end
-	tatr(self, _context)
-	if self:getQty() > 0 then
-		self.triggered = false
-	end
+	--[[local vanilla_bulk_apply = {
+		tag_handy = true,
+		tag_garbage = true,
+		tag_juggle = true,
+		tag_skip = true,
+		tag_economy = true
+	}--]] --todo: reimplement these all manually
+	if tag and tag.bulk_apply and type(tag.bulk_apply) == 'function' then
+		return tag:bulk_apply(_context)
+	else return ret end
 end
