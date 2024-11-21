@@ -7,7 +7,7 @@
 --- PRIORITY: 89999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
 --- BADGE_COLOR: 000000
 --- PREFIX: inc
---- VERSION: 0.5.5
+--- VERSION: 0.6.0~dev
 --- LOADER_VERSION_GEQ: 1.0.0
 
 Incantation = {consumable_in_use = false, accelerate = false} --will port more things over to this global later, but for now it's going to be mostly empty
@@ -211,7 +211,7 @@ function Card:subQty(quantity, dont_dissolve)
 		self.ignorestacking = true
 		self:start_dissolve()
 	else
-		self:setQty(math.max(0, self:getQty() - math.ceil(quantity)))
+		self:setQty(math.max(0, self:getQty() + math.ceil(quantity)))
 	end
 end
 
@@ -444,7 +444,7 @@ end
 
 local startdissolveref = Card.start_dissolve
 function Card:start_dissolve(a,b,c,d)
-	if self.ability.qty and self.ability.qty > 1 and Incantation.consumable_in_use and self.cardinuse and not self.ignore_incantation_consumable_in_use then return end
+	if self.ability.qty and self.ability.qty > 1 and Incantation.consumable_in_use and not self.ignore_incantation_consumable_in_use then return end
 	self.ignorestacking = true
 	return startdissolveref(self,a,b,c,d)
 end
@@ -484,12 +484,10 @@ G.FUNCS.can_split_card = function(e)
 end
 
 function Card:MergeAvailable()
-	if (self.config or {}).consumeable then
-		for k, v in pairs(G.consumeables.cards) do
-			if v then
-				if v ~= self and (v.config or {}).center_key == (self.config or {}).center_key and ((v.edition or {}).type or '') == ((self.edition or {}).type or '') then
-					return true
-				end
+	for k, v in pairs(G.consumeables.cards) do
+		if v then
+			if v ~= self and (v.config or {}).center_key == (self.config or {}).center_key and ((v.edition or {}).type or '') == ((self.edition or {}).type or '') then
+				return true
 			end
 		end
 	end
@@ -525,7 +523,7 @@ end
 G.FUNCS.can_use_every_planet = function(e)
 	local card = e.config.ref_table
 	local obj = card.config.center
-	if (((card.config or {}).center or {}).set or '') == 'Planet' and card:CanBulkUse() and CanUseStackButtons() and not card.ignorestacking and not obj.ignore_allplanets then
+	if (((card.config or {}).center or {}).set or '') == 'Planet' and card:CanBulkUse() and CanUseStackButtons() and not card.ignorestacking then
         e.config.colour = G.C.SECONDARY_SET.Planet
         e.config.button = 'use_every_planet'
 		e.states.visible = true
@@ -590,7 +588,7 @@ function runthrough_planets()
 				end
 				for i = 1, #G.jokers.cards do
 					local effects = G.jokers.cards[i]:calculate_joker({using_consumeable = true, consumeable = card})
-					if effects and effects.joker_repetitions then
+					if (SMODS.Mods['Cryptid'] or {}).can_load and effects and effects.joker_repetitions then
 						rep_list = effects.joker_repetitions
 						for z=1, #rep_list do
 							if type(rep_list[z]) == 'table' and rep_list[z].repetitions then
@@ -609,16 +607,6 @@ function runthrough_planets()
 				end}))
 			end
 		end
-		G.E_MANAGER:add_event(Event({
-			trigger = 'after',
-			delay = 0.1,
-			blockable = true,
-			func = function()
-				Incantation.consumable_in_use = false
-				Incantation.accelerate = false
-				return true
-			end
-		}))
 	end
 end
 
@@ -628,7 +616,7 @@ G.FUNCS.use_every_planet = function(e)
 		local card = G.consumeables.cards[i]
 		if card then
 			local obj = card.config.center
-			if (((card.config or {}).center or {}).set or '') == 'Planet' and (not obj.can_use or obj:can_use(card)) and not obj.ignore_allplanets then
+			if (((card.config or {}).center or {}).set or '') == 'Planet' and (not obj.can_use or obj:can_use(card)) then
 				table.insert(targets, card)
 			end
 		end
@@ -676,7 +664,7 @@ function Card:create_stack_display()
 					r = 0.001,
 					padding = 0.1,
 					align = 'cm',
-					colour = adjust_alpha(darken(G.C.BLACK, 0.2), 0.6),
+					colour = adjust_alpha(darken(G.C.BLACK, 0.2), 0.4),
 					shadow = false,
 					func = 'disablestackdisplay',
 					ref_table = self
@@ -702,7 +690,7 @@ function Card:create_stack_display()
 				}
 			},
 			config = {
-				align = 'cm',
+				align = 'tm',
 				bond = 'Strong',
 				parent = self
 			},
@@ -1057,6 +1045,320 @@ SMODS.Joker:take_ownership('perkeo', {
 				card_eval_status_text(context.blueprint_card or card, 'extra', nil, nil, nil, {message = localize('k_duplicated_ex')})
 				return {calculated = true}
 			end
+		end
+	end
+})
+
+--------------Tags--------------
+
+function Tag:getQty()
+	return (self.ability or {}).qty or 1
+end
+
+function Tag:setQty(quantity)
+	if not quantity then quantity = 1 end
+	if self:CanStack() then
+		if self.ability then
+			self.ability.qty = math.min(HardLimit, math.floor(quantity))
+			self:create_stack_display()
+		end
+	end
+end
+
+function Tag:addQty(quantity)
+	self:setQty(self:getQty() + math.floor(quantity))
+end
+
+function Tag:subQty(quantity, dont_dissolve)
+	if quantity >= self:getQty() and not dont_dissolve then
+		self:setQty(0)
+		self.ignorestacking = true
+		self:nope()
+	else
+		self:setQty(math.max(0, self:getQty() - math.ceil(quantity)))
+	end
+end
+
+function Tag:CanStack()
+	if CFG.StackAnything then
+		return true
+	end
+    local center = G.P_TAGS[self.key]
+	return (center and (type(center.can_stack) == 'function' and center:can_stack() or center.can_stack)) or true--tablecontains(Stackable, "Tag") or tablecontains(StackableIndividual, self.key)
+end
+
+function Tag:try_merge()
+	if self:CanStack() and not self.ignorestacking then
+        -- Find this card
+        for i = #G.GAME.tags, 2, -1 do
+            if G.GAME.tags[i] == self then
+				local merge_max = i
+				local is_mergable = true
+				while is_mergable do
+					merge_max = merge_max - 1
+					if merge_max < 1 then break end
+					local v = G.GAME.tags[merge_max]
+					--TODO: check if abilities are equal (e.g. orbital tags)
+					if not (v ~= self and not v.start_dissolve and not v.nomerging and not v.ignorestacking and v.key == self.key and (v:getQty() < (UseStackCap and MaxStack or HardLimit))) then
+						is_mergable = false
+					end
+				end
+				if merge_max < i - 1 then
+					merge_max = merge_max + 1
+					--merge_max+1 up to i are being merged into merge_max
+					local v = G.GAME.tags[merge_max]
+                	local space = (UseStackCap and MaxStack or HardLimit)
+					v.HUD_stack = v.HUD_stack or v:create_stack_display()
+                    for m = i, merge_max+1, -1 do
+						local merged_tag = G.GAME.tags[m]
+						v.ability.qty = math.min((v:getQty() + merged_tag:getQty()), space)
+					end
+					v:juice_up(0.5,0.5)
+					play_sound('card1')
+					for m = i, merge_max+1, -1 do
+						local merged_tag = G.GAME.tags[m]
+						merged_tag.ignorestacking = true
+						merged_tag.bulk_triggered = true
+						merged_tag:remove()
+					end
+					return true
+                end
+            end
+        end
+	end
+end
+
+function Tag:create_stack_display()
+	if not self.HUD_stack then --and not self:try_merge() and self:CanStack() then
+		self.HUD_stack = UIBox {
+			definition = {
+				n = G.UIT.ROOT,
+				config = {
+					minh = 0.3,
+					maxh = 0.6,
+					minw = 0.2,
+					maxw = 1,
+					r = 0.001,
+					padding = 0.1,
+					align = 'cm',
+					colour = adjust_alpha(darken(G.C.BLACK, 0.2), 0.4),
+					shadow = false,
+					func = 'disablestackdisplay',
+					ref_table = self
+				},
+				nodes = {
+					{
+						n = G.UIT.T,
+						config = {
+							text = 'x',
+							scale = 0.3,
+							colour = G.C.MULT
+						}
+					},
+					{
+						n = G.UIT.T,
+						config = {
+							ref_table = self.ability,
+							ref_value = 'qty',
+							scale = 0.3,
+							colour = G.C.UI.TEXT_LIGHT
+						}
+					}
+				}
+			},
+			config = {
+				align = 'cm',
+                offset = {x=0.4,y=0.3},
+                major = self.HUD_tag,
+			},
+			states = {
+				collide = { can = false },
+				drag = { can = true }
+			}
+		}
+        return self.HUD_stack
+	end
+end
+
+local at = add_tag
+function add_tag(t)
+    at(t)
+	if t:getQty() > 1 then t:create_stack_display() end
+	t:try_merge()
+end
+local trem = Tag.remove
+function Tag:remove()
+	if self.HUD_stack then
+		self.HUD_stack:remove()
+	end
+	trem(self)
+end
+
+function Tag:nope()
+	G.E_MANAGER:add_event(Event({
+        delay = 0.2,
+        trigger = 'after',
+        func = (function()
+            attention_text({
+                text = 'NOPE',
+                colour = G.C.WHITE,
+                scale = 0.7, 
+                hold = 0.3/G.SETTINGS.GAMESPEED,
+                cover = self.HUD_tag,
+                cover_colour = G.C.BLACK,
+                align = 'cm',
+                })
+            play_sound('cancel', 1.4, 0.5)
+            return true
+        end)
+    }))
+	if not self.bulk_triggered and self:getQty() > 1 then
+		self:subQty(1)
+		return true
+	end
+	self.start_dissolve = true
+	if self.HUD_stack then
+		self.HUD_stack:remove()
+	end
+    G.E_MANAGER:add_event(Event({
+        trigger = 'after',
+        delay = 0.1,
+        func = (function()
+            self.HUD_tag.states.visible = false
+            play_sound('cancel', 1.26, 0.5)
+            return true
+        end)
+    }))
+
+    G.E_MANAGER:add_event(Event({
+        trigger = 'after',
+        delay = 0.5,
+        func = (function()
+            self:remove()
+            return true
+        end)
+    }))
+end
+
+function Tag:yep(message, _colour, func)
+	stop_use()
+
+    G.E_MANAGER:add_event(Event({
+        delay = 0.4,
+        trigger = 'after',
+        func = (function()
+            attention_text({
+                text = message,
+                colour = G.C.WHITE,
+                scale = 1, 
+                hold = 0.3/G.SETTINGS.GAMESPEED,
+                cover = self.HUD_tag,
+                cover_colour = _colour or G.C.GREEN,
+                align = 'cm',
+                })
+            play_sound('generic1', 0.9 + math.random()*0.1, 0.8)
+            play_sound('holo1', 1.2 + math.random()*0.1, 0.4)
+            return true
+        end)
+    }))
+	if not self.bulk_triggered and self:getQty() > 1 then
+		G.E_MANAGER:add_event(Event({
+			func = func
+		}))
+		G.E_MANAGER:add_event(Event({
+			func = function()
+				self:subQty(1)
+				return true
+			end
+		}))
+		return true
+	end
+	self.start_dissolve = true
+    G.E_MANAGER:add_event(Event({
+        func = (function()
+			if self.HUD_stack then
+				self.HUD_stack:remove()
+			end
+            self.HUD_tag.states.visible = false
+            return true
+        end)
+    }))
+    G.E_MANAGER:add_event(Event({
+        func = func
+    }))
+    
+    G.E_MANAGER:add_event(Event({
+        trigger = 'after',
+        delay = 0.7,
+        func = (function()
+            self:remove()
+            return true
+        end)
+    }))
+end
+
+local tatr = Tag.apply_to_run
+function Tag:apply_to_run(_context)
+	if self.triggered or self.bulk_triggered or self.start_dissolve or (self.config.type ~= _context.type) then return end
+	local tag = G.P_TAGS[self.key]
+	if tag and tag.bulk_apply then
+		return tag:bulk_apply(self, _context)
+	elseif _context.type == 'eval' or _context.type == 'immediate' or _context.type == 'voucher_add' or _context.type == 'round_start_bonus' then
+		for i = 1, self:getQty() do
+			local ret = tatr(self, _context)
+			local was_triggered = self.triggered
+			if self:getQty() > 0 then
+				self.triggered = false
+			end
+			if not ret and not was_triggered then
+				return
+			end
+		end
+	else
+		local ret = tatr(self, _context)
+		if self:getQty() > 0 then
+			self.triggered = false
+		end
+		return ret
+	end
+end
+
+SMODS.Tag:take_ownership('double', {
+	bulk_apply = function(self, tag, context)
+		if context.tag.key ~= "tag_double" then
+			local lock = tag.ID
+			local qty = tag:getQty()
+			G.CONTROLLER.locks[lock] = true
+			tag.bulk_triggered = true
+			tag:yep('+', G.C.BLUE,function()
+				if context.tag.ability and context.tag.ability.orbital_hand then
+					G.orbital_hand = context.tag.ability.orbital_hand
+				end
+				local t = Tag(context.tag.key)
+				t:setQty(qty)
+				add_tag(t)
+				G.orbital_hand = nil
+				G.CONTROLLER.locks[lock] = nil
+				return true
+			end)
+			return true
+		end
+	end
+})
+SMODS.Tag:take_ownership('investment', {
+	bulk_apply = function(self, tag, context)
+		if G.GAME.last_blind and G.GAME.last_blind.boss then
+			local qty = tag:getQty()
+			tag.bulk_triggered = true
+			tag:yep('+', G.C.GOLD,function() 
+				return true
+			end)
+			return {
+				dollars = tag.config.dollars * qty,
+				condition = localize('ph_defeat_the_boss').." (X"..qty..")",
+				pos = tag.pos,
+				tag = tag
+			}
 		end
 	end
 })
