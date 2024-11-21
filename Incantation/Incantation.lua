@@ -211,7 +211,7 @@ function Card:subQty(quantity, dont_dissolve)
 		self.ignorestacking = true
 		self:start_dissolve()
 	else
-		self:setQty(math.max(0, self:getQty() - math.ceil(quantity)))
+		self:setQty(math.max(0, self:getQty() + math.ceil(quantity)))
 	end
 end
 
@@ -444,7 +444,7 @@ end
 
 local startdissolveref = Card.start_dissolve
 function Card:start_dissolve(a,b,c,d)
-	if self.ability.qty and self.ability.qty > 1 and Incantation.consumable_in_use and self.cardinuse and not self.ignore_incantation_consumable_in_use then return end
+	if self.ability.qty and self.ability.qty > 1 and Incantation.consumable_in_use and not self.ignore_incantation_consumable_in_use then return end
 	self.ignorestacking = true
 	return startdissolveref(self,a,b,c,d)
 end
@@ -484,12 +484,10 @@ G.FUNCS.can_split_card = function(e)
 end
 
 function Card:MergeAvailable()
-	if (self.config or {}).consumeable then
-		for k, v in pairs(G.consumeables.cards) do
-			if v then
-				if v ~= self and (v.config or {}).center_key == (self.config or {}).center_key and ((v.edition or {}).type or '') == ((self.edition or {}).type or '') then
-					return true
-				end
+	for k, v in pairs(G.consumeables.cards) do
+		if v then
+			if v ~= self and (v.config or {}).center_key == (self.config or {}).center_key and ((v.edition or {}).type or '') == ((self.edition or {}).type or '') then
+				return true
 			end
 		end
 	end
@@ -525,7 +523,7 @@ end
 G.FUNCS.can_use_every_planet = function(e)
 	local card = e.config.ref_table
 	local obj = card.config.center
-	if (((card.config or {}).center or {}).set or '') == 'Planet' and card:CanBulkUse() and CanUseStackButtons() and not card.ignorestacking and not obj.ignore_allplanets then
+	if (((card.config or {}).center or {}).set or '') == 'Planet' and card:CanBulkUse() and CanUseStackButtons() and not card.ignorestacking then
         e.config.colour = G.C.SECONDARY_SET.Planet
         e.config.button = 'use_every_planet'
 		e.states.visible = true
@@ -590,7 +588,7 @@ function runthrough_planets()
 				end
 				for i = 1, #G.jokers.cards do
 					local effects = G.jokers.cards[i]:calculate_joker({using_consumeable = true, consumeable = card})
-					if effects and effects.joker_repetitions then
+					if (SMODS.Mods['Cryptid'] or {}).can_load and effects and effects.joker_repetitions then
 						rep_list = effects.joker_repetitions
 						for z=1, #rep_list do
 							if type(rep_list[z]) == 'table' and rep_list[z].repetitions then
@@ -609,16 +607,6 @@ function runthrough_planets()
 				end}))
 			end
 		end
-		G.E_MANAGER:add_event(Event({
-			trigger = 'after',
-			delay = 0.1,
-			blockable = true,
-			func = function()
-				Incantation.consumable_in_use = false
-				Incantation.accelerate = false
-				return true
-			end
-		}))
 	end
 end
 
@@ -628,7 +616,7 @@ G.FUNCS.use_every_planet = function(e)
 		local card = G.consumeables.cards[i]
 		if card then
 			local obj = card.config.center
-			if (((card.config or {}).center or {}).set or '') == 'Planet' and (not obj.can_use or obj:can_use(card)) and not obj.ignore_allplanets then
+			if (((card.config or {}).center or {}).set or '') == 'Planet' and (not obj.can_use or obj:can_use(card)) then
 				table.insert(targets, card)
 			end
 		end
@@ -676,7 +664,7 @@ function Card:create_stack_display()
 					r = 0.001,
 					padding = 0.1,
 					align = 'cm',
-					colour = adjust_alpha(darken(G.C.BLACK, 0.2), 0.6),
+					colour = adjust_alpha(darken(G.C.BLACK, 0.2), 0.4),
 					shadow = false,
 					func = 'disablestackdisplay',
 					ref_table = self
@@ -702,7 +690,7 @@ function Card:create_stack_display()
 				}
 			},
 			config = {
-				align = 'cm',
+				align = 'tm',
 				bond = 'Strong',
 				parent = self
 			},
@@ -1311,56 +1299,66 @@ end
 
 local tatr = Tag.apply_to_run
 function Tag:apply_to_run(_context)
-	if self.triggered or self.bulk_triggered or self.start_dissolve then return end
-	-- Hardcode some tags/contexts that don't play nice with the new system
-	-- todo: implement these with take ownership
-	if _context.type == 'eval' and self.key == "tag_investment" and G.GAME.last_blind and G.GAME.last_blind.boss then 
-		local qty = self:getQty()
-		self.bulk_triggered = true
-		self:yep('+', G.C.GOLD,function() 
-			return true
-		end)
-		return {
-			dollars = self.config.dollars * qty,
-			condition = localize('ph_defeat_the_boss').." (X"..qty..")",
-			pos = self.pos,
-			tag = self
-		}
-	end
-	if _context.type == "tag_add" and self.key == "tag_double" and _context.tag.key ~= "tag_double" then
-		local lock = self.ID
-		local qty = self:getQty()
-		G.CONTROLLER.locks[lock] = true
-		self.bulk_triggered = true
-		self:yep('+', G.C.BLUE,function()
-			if _context.tag.ability and _context.tag.ability.orbital_hand then
-				G.orbital_hand = _context.tag.ability.orbital_hand
-			end
-			local t = Tag(_context.tag.key)
-			t:setQty(qty)
-			add_tag(t)
-			G.orbital_hand = nil
-			G.CONTROLLER.locks[lock] = nil
-			return true
-		end)
-		return true
-	end
-	--bulk calculate tags
+	if self.triggered or self.bulk_triggered or self.start_dissolve or (self.config.type ~= _context.type) then return end
 	local tag = G.P_TAGS[self.key]
-	if not tag and tag.bulk_apply then
+	if tag and tag.bulk_apply then
+		return tag:bulk_apply(self, _context)
+	elseif _context.type == 'eval' or _context.type == 'immediate' or _context.type == 'voucher_add' or _context.type == 'round_start_bonus' then
+		for i = 1, self:getQty() do
+			local ret = tatr(self, _context)
+			local was_triggered = self.triggered
+			if self:getQty() > 0 then
+				self.triggered = false
+			end
+			if not ret and not was_triggered then
+				return
+			end
+		end
+	else
 		local ret = tatr(self, _context)
 		if self:getQty() > 0 then
 			self.triggered = false
 		end
+		return ret
 	end
-	--[[local vanilla_bulk_apply = {
-		tag_handy = true,
-		tag_garbage = true,
-		tag_juggle = true,
-		tag_skip = true,
-		tag_economy = true
-	}--]] --todo: reimplement these all manually
-	if tag and tag.bulk_apply and type(tag.bulk_apply) == 'function' then
-		return tag:bulk_apply(_context)
-	else return ret end
 end
+
+SMODS.Tag:take_ownership('double', {
+	bulk_apply = function(self, tag, context)
+		if context.tag.key ~= "tag_double" then
+			local lock = tag.ID
+			local qty = tag:getQty()
+			G.CONTROLLER.locks[lock] = true
+			tag.bulk_triggered = true
+			tag:yep('+', G.C.BLUE,function()
+				if context.tag.ability and context.tag.ability.orbital_hand then
+					G.orbital_hand = context.tag.ability.orbital_hand
+				end
+				local t = Tag(context.tag.key)
+				t:setQty(qty)
+				add_tag(t)
+				G.orbital_hand = nil
+				G.CONTROLLER.locks[lock] = nil
+				return true
+			end)
+			return true
+		end
+	end
+})
+SMODS.Tag:take_ownership('investment', {
+	bulk_apply = function(self, tag, context)
+		if G.GAME.last_blind and G.GAME.last_blind.boss then
+			local qty = tag:getQty()
+			tag.bulk_triggered = true
+			tag:yep('+', G.C.GOLD,function() 
+				return true
+			end)
+			return {
+				dollars = tag.config.dollars * qty,
+				condition = localize('ph_defeat_the_boss').." (X"..qty..")",
+				pos = tag.pos,
+				tag = tag
+			}
+		end
+	end
+})
