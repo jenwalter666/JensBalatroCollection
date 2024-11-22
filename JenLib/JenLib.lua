@@ -6,7 +6,7 @@
 --- MOD_DESCRIPTION: Some functions that I commonly use which some people might find a use for
 --- BADGE_COLOR: 000000
 --- PREFIX: jenlib
---- VERSION: 0.2.5
+--- VERSION: 0.2.6
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --Global table, don't modify!
@@ -25,6 +25,26 @@ end
 --A more minimalist function for changing the hand UI
 function jl.h(name, chip, mul, lv, notif, snd, vol, pit, de)
 	update_hand_text({sound = type(snd) == 'string' and snd or type(snd) == 'nil' and 'button', volume = vol or 0.7, pitch = pit or 0.8, delay = de or 0.3}, {handname=name or '????', chips = chip or '?', mult = mul or '?', level=lv or '?', StatusText = notif})
+end
+
+function jl.hn(newname)
+	update_hand_text({delay = 0}, {handname = newname})
+end
+
+function jl.hlv(newlevel)
+	update_hand_text({delay = 0}, {level = newlevel})
+end
+
+function jl.hc(newchips, notif)
+	update_hand_text({delay = 0}, {chips = newchips, StatusText = notif})
+end
+
+function jl.hm(newmult, notif)
+	update_hand_text({delay = 0}, {mult = newmult, StatusText = notif})
+end
+
+function jl.hcm(newchips, newmult, notif)
+	update_hand_text({delay = 0}, {chips = newchips, mult = newmult, StatusText = notif})
 end
 
 --Updates the hand text to a specified hand
@@ -117,17 +137,13 @@ function jl.sc(context)
 	return context.cardarea and context.cardarea == G.play and not context.before and not context.after and not context.repetition
 end
 
+--Gets the most-played hand
 function jl.favhand()
-	if not G.GAME or not G.GAME.current_round then return 'High Card' end
-	return G.GAME.current_round.most_played_poker_hand
-end
-
-function jl.sfavhand()
 	if not G.GAME or not G.GAME.current_round then return 'High Card' end
 	local chosen_hand = 'High Card'
 	local _handname, _played, _order = 'High Card', -1, 100
 	for k, v in pairs(G.GAME.hands) do
-		if k ~= G.GAME.current_round.most_played_poker_hand and v.played > _played or (v.played == _played and _order > v.order) then 
+		if v.played > _played or (v.played == _played and _order > v.order) then 
 			_played = v.played
 			_handname = k
 		end
@@ -136,6 +152,23 @@ function jl.sfavhand()
 	return chosen_hand
 end
 
+--Gets the secondmost-played hand
+function jl.sfavhand()
+	if not G.GAME or not G.GAME.current_round then return 'High Card' end
+	local chosen_hand = 'High Card'
+	local firstmost = jl.favhand()
+	local _handname, _played, _order = 'High Card', -1, 100
+	for k, v in pairs(G.GAME.hands) do
+		if k ~= firstmost and v.played > _played or (v.played == _played and _order > v.order) then 
+			_played = v.played
+			_handname = k
+		end
+	end
+	chosen_hand = _handname
+	return chosen_hand
+end
+
+--Gets the hand with the lowest level, prioritises lower-ranking hands
 function jl.lowhand()
 	local chosen_hand = 'High Card'
 	local lowest_level = math.huge
@@ -148,6 +181,7 @@ function jl.lowhand()
 	return chosen_hand
 end
 
+--Gets the hand with the highest level, prioritises higher-ranking hands
 function jl.hihand()
 	local chosen_hand = 'High Card'
 	local highest_level = -math.huge
@@ -160,6 +194,7 @@ function jl.hihand()
 	return chosen_hand
 end
 
+--Gets a random hand
 function jl.rndhand(ignore, seed, allowhidden)
 	local chosen_hand
 	ignore = ignore or {}
@@ -176,6 +211,11 @@ function jl.rndhand(ignore, seed, allowhidden)
 		end
 	end
 	return chosen_hand
+end
+
+--Checks if a given table of contexts does not have joker retriggers involved
+function jl.njr(context)
+	return not context.retrigger_joker_check and not context.retrigger_joker
 end
 
 --Easier way to type G.SETTINGS.GAMESPEED
