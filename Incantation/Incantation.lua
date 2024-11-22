@@ -7,7 +7,7 @@
 --- PRIORITY: 89999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
 --- BADGE_COLOR: 000000
 --- PREFIX: inc
---- VERSION: 0.5.5
+--- VERSION: 0.5.6
 --- LOADER_VERSION_GEQ: 1.0.0
 
 Incantation = {consumable_in_use = false, accelerate = false} --will port more things over to this global later, but for now it's going to be mostly empty
@@ -484,7 +484,7 @@ G.FUNCS.can_split_card = function(e)
 end
 
 function Card:MergeAvailable()
-	if (self.config or {}).consumeable then
+	if ((self.config or {}).center or {}).set ~= 'Joker' then
 		for k, v in pairs(G.consumeables.cards) do
 			if v then
 				if v ~= self and (v.config or {}).center_key == (self.config or {}).center_key and ((v.edition or {}).type or '') == ((self.edition or {}).type or '') then
