@@ -15,6 +15,8 @@ Read more below for info about compatibility on Almanac
 # Wait, where is Jen's Almanac?
 I removed it from GitHub because I need to reduce my workload; I'm juggling tons of things at once and trying to manage a lot of files simultaneously on GitHub, trying to remember what needs updating and what doesn't, is pretty difficult. You can still find Jen's Almanac in the [official Balatro Discord](https://discord.com/channels/1116389027176787968/1262697083438235729) or the [Cryptid Discord](https://discord.gg/eUf9Ur6RyB).
 
+**Notice : Almanac is currently unavailable as 0.0.7 has been deprecated, 0.1.0 is being worked on.**
+
 # Installation
 
 Make sure that **none** of the mods included in this repository are nested. They should all be directly installed into the Mods folder.
@@ -32,7 +34,6 @@ Make sure that **none** of the mods included in this repository are nested. They
 
 ## Jen's Almanac can work without these mods, but some content is restricted without them:
 - [SDM_0's Stuff](https://github.com/SDM0/SDM_0-s-Stuff)
-- [Fusion Jokers](https://github.com/itayfeder/Fusion-Jokers)
 
 ## Jen's Almanac synergises well with these mods:
 - [Aurinko](/Aurinko)
