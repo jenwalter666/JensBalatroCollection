@@ -34,6 +34,7 @@ Make sure that **none** of the mods included in this repository are nested. They
 
 ## Jen's Almanac can work without these mods, but some content is restricted without them:
 - [SDM_0's Stuff](https://github.com/SDM0/SDM_0-s-Stuff)
+- [MoreFluff](https://github.com/notmario/MoreFluff)
 
 ## Jen's Almanac synergises well with these mods:
 - [Aurinko](/Aurinko)
