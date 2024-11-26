@@ -7,7 +7,7 @@
 --- PRIORITY: 89999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
 --- BADGE_COLOR: 000000
 --- PREFIX: inc
---- VERSION: 0.5.6
+--- VERSION: 0.5.7
 --- LOADER_VERSION_GEQ: 1.0.0
 
 Incantation = {consumable_in_use = false, accelerate = false} --will port more things over to this global later, but for now it's going to be mostly empty
@@ -235,7 +235,7 @@ function Card:CanDivide()
 end
 
 function Card:CanBulkUse(ignoreunsafe)
-	return (not ignoreunsafe and CFG.UnsafeMode) or (self.config.center and (type(self.config.center.can_bulk_use) == 'function' and self.config.center:can_bulk_use() or (self.config.center.can_bulk_use or (self.config.center.bulk_use and (type(self.config.center.bulk_use) == 'function'))))) or tablecontains(BulkUsable, self.ability.set) or tablecontains(BulkUsableIndividual, self.config.center_key)
+	return (not ignoreunsafe and CFG.UnsafeMode) or (not self.config.center.no_bulkuse and ((self.config.center and (type(self.config.center.can_bulk_use) == 'function' and self.config.center:can_bulk_use() or (self.config.center.can_bulk_use or (self.config.center.bulk_use and (type(self.config.center.bulk_use) == 'function'))))) or tablecontains(BulkUsable, self.ability.set) or tablecontains(BulkUsableIndividual, self.config.center_key)))
 end
 
 function Card:getmaxuse()
