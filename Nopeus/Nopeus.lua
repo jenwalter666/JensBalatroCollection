@@ -6,7 +6,7 @@
 --- MOD_DESCRIPTION: An extension of MoreSpeeds which includes more options, including a new speed which makes the event manager run as fast as it can.
 --- BADGE_COLOR: ff3c3c
 --- PREFIX: nopeus
---- VERSION: 2.2.1
+--- VERSION: 2.2.2
 --- LOADER_VERSION_GEQ: 1.0.0
 
 Nopeus = {
@@ -233,9 +233,15 @@ G.FUNCS.draw_from_hand_to_discard = function (e)
         return hand_to_discard(e)
     end
     
-    for _ = 1, #G.hand.cards do
-        G.discard:draw_card_from(G.hand)
-    end
+    G.E_MANAGER:add_event(Event({trigger = 'after',
+		blocking = true,
+		blockable = false,
+		func = function()
+			for _ = 1, #G.hand.cards do
+				G.discard:draw_card_from(G.hand)
+			end
+		return true
+	end}))
 end
 
 local discard_to_deck = G.FUNCS.draw_from_discard_to_deck
@@ -244,8 +250,13 @@ G.FUNCS.draw_from_discard_to_deck = function (e)
     if G.SETTINGS.FASTFORWARD < 2 then
         return discard_to_deck(e)
     end
-    
-    for _ = 1, #G.discard.cards do
-        G.deck:draw_card_from(G.discard)
-    end
+    G.E_MANAGER:add_event(Event({trigger = 'after',
+		blocking = true,
+		blockable = false,
+		func = function()
+			for _ = 1, #G.discard.cards do
+				G.deck:draw_card_from(G.discard)
+			end
+		return true
+	end}))
 end
