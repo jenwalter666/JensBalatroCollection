@@ -7,7 +7,7 @@
 --- PRIORITY: 98999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
 --- BADGE_COLOR: 009cff
 --- PREFIX: aurinko
---- VERSION: 0.4.8
+--- VERSION: 0.4.9
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --[[
@@ -245,7 +245,7 @@ function level_up_hand(card, hand, instant, amount)
 							factor = to_big(obj.ee_chips)
 							memory = amount
 							amount = math.min(math.max(math.floor(amount + 0.5), -HyperoperationLimit), HyperoperationLimit)
-							if amount > 0 then
+							if amount >= 0 then
 								op = '^^'
 								for i = 1, amount do
 									G.GAME.hands[hand].s_chips = (math.max(get_s_chips(hand):arrow(2, factor), 1))
@@ -278,7 +278,7 @@ function level_up_hand(card, hand, instant, amount)
 							factor = to_big(obj.eee_chips)
 							memory = amount
 							amount = math.min(math.max(math.floor(amount + 0.5), -HyperoperationLimit), HyperoperationLimit)
-							if amount > 0 then
+							if amount >= 0 then
 								op = '^^^'
 								for i = 1, amount do
 									G.GAME.hands[hand].s_chips = (math.max(get_s_chips(hand):arrow(3, factor), 1))
@@ -311,7 +311,7 @@ function level_up_hand(card, hand, instant, amount)
 							factor = {obj.hyper_chips[1], to_big(obj.hyper_chips[2])}
 							memory = amount
 							amount = math.min(math.max(math.floor(amount + 0.5), -HyperoperationLimit), HyperoperationLimit)
-							if amount > 0 then
+							if amount >= 0 then
 								op = obj.hyper_chips[1] > 5 and ('{' .. obj.hyper_chips[1] .. '}') or string.rep('^', obj.hyper_chips[1])
 								for i = 1, amount do
 									G.GAME.hands[hand].s_chips = (math.max(get_s_chips(hand):arrow(factor[1], factor[2]), 1))
@@ -398,7 +398,7 @@ function level_up_hand(card, hand, instant, amount)
 							factor = to_big(obj.ee_mult)
 							memory = amount
 							amount = math.min(math.max(math.floor(amount + 0.5), -HyperoperationLimit), HyperoperationLimit)
-							if amount > 0 then
+							if amount >= 0 then
 								op = '^^'
 								for i = 1, amount do
 									G.GAME.hands[hand].s_mult = (math.max(get_s_mult(hand):arrow(2, factor), 1))
@@ -431,7 +431,7 @@ function level_up_hand(card, hand, instant, amount)
 							factor = to_big(obj.eee_mult)
 							memory = amount
 							amount = math.min(math.max(math.floor(amount + 0.5), -HyperoperationLimit), HyperoperationLimit)
-							if amount > 0 then
+							if amount >= 0 then
 								op = '^^^'
 								for i = 1, amount do
 									G.GAME.hands[hand].s_mult = (math.max(get_s_mult(hand):arrow(3, factor), 1))
@@ -464,7 +464,7 @@ function level_up_hand(card, hand, instant, amount)
 							memory = amount
 							amount = math.min(math.max(math.floor(amount + 0.5), -HyperoperationLimit), HyperoperationLimit)
 							factor = {obj.hyper_mult[1], to_big(obj.hyper_mult[2])}
-							if amount > 0 then
+							if amount >= 0 then
 								op = obj.hyper_mult[1] > 5 and ('{' .. obj.hyper_mult[1] .. '}') or string.rep('^', obj.hyper_mult[1])
 								for i = 1, amount do
 									G.GAME.hands[hand].s_mult = (math.max(get_s_mult(hand):arrow(factor[1], factor[2]), 1))
