@@ -380,7 +380,7 @@ function jl.round( num, idp )
 end
 
 --Checks if it's "safe" to use consumables
-function jl.canuse()
+function jl.canuse(card)
 	return not (((G.play and #G.play.cards > 0) or (G.CONTROLLER.locked) or (G.GAME.STOP_USE and G.GAME.STOP_USE > 0)) and G.STATE ~= G.STATES.HAND_PLAYED and G.STATE ~= G.STATES.DRAW_TO_HAND and G.STATE ~= G.STATES.PLAY_TAROT)
 end
 
@@ -438,15 +438,15 @@ function Q(fc, de, t, tr, bl, ba)
 end
 
 --Gets a random key, filtered with flags. Default functionality is getting a random consumable that is not hidden
-function jl.rnd(seed, excluded_flags, unbalanced, pool, attempts)
-	excluded_flags = excluded_flags or unbalanced and {'no_doe', 'no_grc'} or {'hidden', 'no_doe', 'no_grc'}
+function jl.rnd(seed, excluded_flags, pool, attempts)
+	excluded_flags = excluded_flags or {'hidden', 'no_doe', 'no_grc'}
 	local selection = 'n/a'
 	local passes = 0
 	local tries = attempts or 500
 	while true do
 		tries = tries - 1
 		passes = 0
-		selection = G.P_CENTERS[pseudorandom_element(pool or G.P_CENTER_POOLS.Consumeables, pseudoseed(seed or 'grc')).key]
+		selection = G.P_CENTERS[pseudorandom_element(pool or G.P_CENTER_POOLS.Consumeables, pseudoseed(seed or 'jlrnd')).key]
 		for k, v in pairs(excluded_flags) do
 			if not selection[v] then
 				passes = passes + 1
