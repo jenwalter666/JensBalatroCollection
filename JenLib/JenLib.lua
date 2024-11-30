@@ -6,7 +6,7 @@
 --- MOD_DESCRIPTION: Some functions that I commonly use which some people might find a use for
 --- BADGE_COLOR: 000000
 --- PREFIX: jenlib
---- VERSION: 0.2.6
+--- VERSION: 0.3.0
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --Global table, don't modify!
@@ -20,6 +20,21 @@ function jl.bf(needle, haystack)
 		if type(v) == 'string' and v == needle then return true end
 	end
 	return false
+end
+
+--Gets the position of a card on the X axis
+function Card:xpos()
+	return (self.T.x + self.T.w/2)
+end
+
+--Gets the position of a card on the Y axis
+function Card:ypos()
+	return (self.T.h + self.T.h/2)
+end
+
+--Gets the position of a card on X and Y
+function Card:pos()
+	return self:xpos(), self:ypos()
 end
 
 --A more minimalist function for changing the hand UI
@@ -64,11 +79,123 @@ function jl.ch()
 end
 
 --Returns the first instance of a given card by ID, or nil if the card doesn't exist
+local all_areas = {'jokers', 'consumeables', 'hand', 'discard'}
 function jl.fc(id, area)
 	if not area then area = 'jokers' end
-	if not G[area] then return end
-	for i = 1, #G[area].cards do
-		if G[area].cards[i].config.center.key == id then return G[area].cards[i] end
+	if type(area) == 'table' then
+		for k, a in ipairs(area) do
+			for i = 1, #G[a].cards do
+				if G[a].cards[i].config.center.key == id then return G[a].cards[i] end
+			end
+		end
+	elseif area == 'all' then
+		for k, a in ipairs(all_areas) do
+			for i = 1, #G[a].cards do
+				if G[a].cards[i].config.center.key == id then return G[a].cards[i] end
+			end
+		end
+	else
+		if not G[area] then return end
+		for i = 1, #G[area].cards do
+			if G[area].cards[i].config.center.key == id then return G[area].cards[i] end
+		end
+	end
+	return
+end
+
+--Randomises playing cards
+function jl.randomise(targets, noanim)
+	if #targets <= 0 then return end
+	if noanim then
+		for i=1, #targets do
+			local card = targets[i]
+			card:set_base(pseudorandom_element(G.P_CARDS))	
+			if pseudorandom(pseudoseed('chancetime')) > 1 / (#G.P_CENTER_POOLS['Enhanced']+1) then
+				card:set_ability(pseudorandom_element(G.P_CENTER_POOLS['Enhanced'], pseudoseed('spectral_chance')))
+			else
+				card:set_ability(G.P_CENTERS['c_base'])
+			end	
+			local edition_rate = 2
+			card:set_edition(poll_edition('standard_edition'..G.GAME.round_resets.ante, edition_rate, true), true, true)
+			local seal_rate = 10
+			local seal_poll = pseudorandom(pseudoseed('stdseal'..G.GAME.round_resets.ante))
+			if seal_poll > 1 - 0.02*seal_rate then
+				local seal_type = pseudorandom(pseudoseed('stdsealtype'..G.GAME.round_resets.ante))
+				local seal_list = {}
+				for k, _ in pairs(G.P_SEALS) do
+					table.insert(seal_list, k)
+				end
+				seal_type = math.floor(seal_type * #seal_list)
+				card:set_seal(seal_list[seal_type], true, true)
+			else
+				card:set_seal(nil, true, true)
+			end
+			card:juice_up(0.3, 0.3)
+		end
+	else
+		for i=1, #targets do
+			local percent = 1.15 - (i-0.999)/(#G.hand.cards-0.998)*0.3
+			G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() targets[i]:flip();play_sound('card1', percent);targets[i]:juice_up(0.3, 0.3);return true end }))
+		end
+		delay(0.2)
+		for i=1, #targets do
+			local percent = 0.85 + (i-0.999)/(#G.hand.cards-0.998)*0.3
+			G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.1,func = function()	
+				local card = targets[i]
+				card:set_base(pseudorandom_element(G.P_CARDS))	
+				if pseudorandom(pseudoseed('chancetime')) > 1 / (#G.P_CENTER_POOLS['Enhanced']+1) then
+					card:set_ability(pseudorandom_element(G.P_CENTER_POOLS['Enhanced'], pseudoseed('spectral_chance')))
+				else
+					card:set_ability(G.P_CENTERS['c_base'])
+				end	
+				local edition_rate = 2
+				card:set_edition(poll_edition('standard_edition'..G.GAME.round_resets.ante, edition_rate, true))
+				local seal_rate = 10
+				local seal_poll = pseudorandom(pseudoseed('stdseal'..G.GAME.round_resets.ante))
+				if seal_poll > 1 - 0.02*seal_rate then
+					local seal_type = pseudorandom(pseudoseed('stdsealtype'..G.GAME.round_resets.ante))
+					local seal_list = {}
+					for k, _ in pairs(G.P_SEALS) do
+						table.insert(seal_list, k)
+					end
+					seal_type = math.floor(seal_type * #seal_list)
+					card:set_seal(seal_list[seal_type])
+				else
+					card:set_seal()
+				end
+				card:flip()
+				play_sound('card3', percent, 0.6)
+				card:juice_up(0.3, 0.3)
+				return true 
+			end }))
+		end
+	end
+end
+
+--Tries to find a card by its sort ID (Card.sort_id), calling without specifying area will check all common areas
+function jl.id(id, area)
+	if area then
+		for k, v in ipairs(area.cards) do
+			if v.sort_id == id then
+				return v
+			end
+		end
+	else
+		for k, v in ipairs(G.jokers.cards) do
+			if v.sort_id == id then
+				return v
+			end
+		end
+		for k, v in ipairs(G.consumeables.cards) do
+			if v.sort_id == id then
+				return v
+			end
+		end
+		for k, v in ipairs(G.playing_cards) do
+			if v.sort_id == id then
+				return v
+			end
+		end
 	end
 	return
 end
@@ -166,6 +293,24 @@ function jl.sfavhand()
 	end
 	chosen_hand = _handname
 	return chosen_hand
+end
+
+--Gets the "adjacent" hands of a hand (a.k.a. the hands above and below the hand you specify according to the poker hand list)
+function jl.adjacenthands(hand)
+	local hands = {}
+	if not G.GAME or not G.GAME.hands then return hands end
+	local pos = -1
+	for k, v in ipairs(G.handlist) do
+		if v == hand then
+			pos = k
+		end
+	end
+	if pos == -1 then
+		return hands
+	end
+	hands.forehand = G.handlist[pos + 1]
+	hands.backhand = G.handlist[pos - 1]
+	return hands
 end
 
 --Gets the hand with the lowest level, prioritises lower-ranking hands
@@ -290,6 +435,54 @@ function Q(fc, de, t, tr, bl, ba)
 		blocking = ba,
 		func = fc
 	}))
+end
+
+--Gets a random key, filtered with flags. Default functionality is getting a random consumable that is not hidden
+function jl.rnd(seed, excluded_flags, unbalanced, pool, attempts)
+	excluded_flags = excluded_flags or unbalanced and {'no_doe', 'no_grc'} or {'hidden', 'no_doe', 'no_grc'}
+	local selection = 'n/a'
+	local passes = 0
+	local tries = attempts or 500
+	while true do
+		tries = tries - 1
+		passes = 0
+		selection = G.P_CENTERS[pseudorandom_element(pool or G.P_CENTER_POOLS.Consumeables, pseudoseed(seed or 'grc')).key]
+		for k, v in pairs(excluded_flags) do
+			if not selection[v] then
+				passes = passes + 1
+			end
+		end
+		if passes >= #excluded_flags or tries <= 0 then
+			return selection
+		end
+	end
+end
+
+--Redeems a voucher by key, leave blank for random
+function jl.voucher(key)
+	local voucher_key = key or get_next_voucher_key(true)
+	if not G.P_CENTERS[voucher_key] then return end
+	local area
+	if G.STATE == G.STATES.HAND_PLAYED then
+		if not G.redeemed_vouchers_during_hand then
+			G.redeemed_vouchers_during_hand = CardArea(G.play.T.x, G.play.T.y, G.play.T.w, G.play.T.h, {type = 'play', card_limit = 5})
+		end
+		area = G.redeemed_vouchers_during_hand
+	else
+		area = G.play
+	end
+	local card = Card(area.T.x + area.T.w/2 - G.CARD_W/2, area.T.y + area.T.h/2-G.CARD_H/2, G.CARD_W, G.CARD_H, G.P_CARDS.empty, G.P_CENTERS[voucher_key],{bypass_discovery_center = true, bypass_discovery_ui = true})
+	card:start_materialize()
+	area:emplace(card)
+	card.cost=0
+	card.shop_voucher=false
+	card:redeem()
+	G.E_MANAGER:add_event(Event({
+		delay = 0,
+		func = function() 
+			card:start_dissolve()
+		return true
+	end}))
 end
 
 --[[ Boilerplate:
