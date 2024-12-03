@@ -7,7 +7,7 @@
 --- PRIORITY: 98999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
 --- BADGE_COLOR: 009cff
 --- PREFIX: aurinko
---- VERSION: 0.4.9
+--- VERSION: 0.4.10
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --[[
@@ -320,7 +320,7 @@ function level_up_hand(card, hand, instant, amount)
 							else
 								op = (obj.hyper_chips[1] > 5 and ('{' .. obj.hyper_chips[1] .. '}') or string.rep('^', obj.hyper_chips[1])) .. '1/'
 								for i = 1, math.abs(amount) do
-									G.GAME.hands[hand].chips = (math.max(get_s_chips(hand):arrow(factor[1], to_big(1) / factor[2]), 1))
+									G.GAME.hands[hand].s_chips = (math.max(get_s_chips(hand):arrow(factor[1], to_big(1) / factor[2]), 1))
 									G.GAME.hands[hand].chips = (math.max(G.GAME.hands[hand].chips:arrow(factor[1], to_big(1) / factor[2]), 1))
 								end
 							end
