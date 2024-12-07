@@ -6,7 +6,7 @@
 --- MOD_DESCRIPTION: Some functions that I commonly use which some people might find a use for
 --- BADGE_COLOR: 000000
 --- PREFIX: jenlib
---- VERSION: 0.3.0
+--- VERSION: 0.3.1
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --Global table, don't modify!
@@ -20,6 +20,53 @@ function jl.bf(needle, haystack)
 		if type(v) == 'string' and v == needle then return true end
 	end
 	return false
+end
+
+--Grabs a random element from a table that's not numerically indexed (e.g. it has elements with strings for keys)
+--It's recommended to do <table>[math.random(#<table>)] instead for numerically-indexed tables as it's more efficient
+function jl.rndelement(tbl)
+	local index = {}
+	for k, v in pairs(tbl) do
+		index[#index + 1] = k
+	end
+	return tbl[index[math.random(#index)]]
+end
+
+--Increases the card's rank to the next value
+function Card:increment(override)
+	local rank_data = SMODS.Ranks[override or self.base.value]
+	local behavior = rank_data.strength_effect or { fixed = 1, ignore = false, random = false }
+	local new_rank
+	if behavior.ignore or not next(rank_data.next) then
+		return true
+	elseif behavior.random then
+		new_rank = pseudorandom_element(rank_data.next, pseudoseed('jl_incrementrank'))
+	else
+		local ii = (behavior.fixed and rank_data.next[behavior.fixed]) and behavior.fixed or 1
+		new_rank = rank_data.next[ii]
+	end
+	assert(SMODS.change_base(self, nil, new_rank))
+end
+
+--Decreases the card's rank to the previous value
+function Card:decrement(override)
+	local rank_data = SMODS.Ranks[override or self.base.value]
+	local behavior = rank_data.strength_effect or { fixed = 1, ignore = false, random = false }
+	local new_rank = 'N/A'
+	if behavior.ignore then
+		return true
+	elseif behavior.random then
+		new_rank = pseudorandom_element(rank_data.next, pseudoseed('jl_decrementrank'))
+	else
+		for k, v in pairs(SMODS.Ranks) do
+			if next(v.next) then
+				new_rank = k
+				break
+			end
+		end
+		if tostring(new_rank) == 'N/A' then return true end
+	end
+	assert(SMODS.change_base(self, nil, new_rank))
 end
 
 --Gets the position of a card on the X axis
@@ -76,6 +123,11 @@ end
 --Fast and easy-to-type function to clear the hand text
 function jl.ch()
 	update_hand_text({sound = 'button', volume = 0.7, pitch = 1.1, delay = 0}, {mult = 0, chips = 0, handname = '', level = ''})
+end
+
+--Calls G.FUNCS.use_card() on a card
+function Card:fire()
+	G.FUNCS.use_card({ config = { ref_table = self } })
 end
 
 --Returns the first instance of a given card by ID, or nil if the card doesn't exist
@@ -293,6 +345,18 @@ function jl.sfavhand()
 	end
 	chosen_hand = _handname
 	return chosen_hand
+end
+
+--Gets the rank of a hand
+function jl.handpos(hand)
+	local pos = -1
+	for i = 1, #G.handlist do
+		if G.handlist[i] == hand then
+			pos = i
+			break
+		end
+	end
+	return pos
 end
 
 --Gets the "adjacent" hands of a hand (a.k.a. the hands above and below the hand you specify according to the poker hand list)
