@@ -57,7 +57,7 @@ end
 
 local HoldDelay = 1.3
 
-local HyperoperationLimit = 2500
+local HyperoperationLimit = 100
 
 local function get_s_chips(hand)
 	if SMODS.Mods['Talisman'] and type(G.GAME.hands[hand].s_chips) ~= 'table' then
@@ -517,6 +517,9 @@ function level_up_hand(card, hand, instant, amount)
 			trigger = 'immediate',
 			func = (function() check_for_unlock{type = 'upgrade_hand', hand = hand, level = G.GAME.hands[hand].level} return true end)
 		}))
+	if collectgarbage("count") > 1048576 then
+		collectgarbage("collect")
+	end
 end
 
 local ccr = create_card
