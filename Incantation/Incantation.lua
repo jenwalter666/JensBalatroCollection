@@ -7,7 +7,7 @@
 --- PRIORITY: 89999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
 --- BADGE_COLOR: 000000
 --- PREFIX: inc
---- VERSION: 0.5.7
+--- VERSION: 0.5.9
 --- LOADER_VERSION_GEQ: 1.0.0
 
 Incantation = {consumable_in_use = false, accelerate = false} --will port more things over to this global later, but for now it's going to be mostly empty
@@ -190,33 +190,35 @@ function Card:getQty()
 	return (self.ability or {}).qty or 1
 end
 
-function Card:setQty(quantity)
+function Card:setQty(quantity, dontupdatecost)
 	if not quantity then quantity = 1 end
 	if self:CanStack() then
 		if self.ability then
 			self.ability.qty = math.min(HardLimit, math.floor(quantity))
 			self:create_stack_display()
-			self:set_cost()
+			if not dontupdatecost then self:set_cost() end
 		end
 	end
 end
 
-function Card:addQty(quantity)
-	self:setQty(self:getQty() + math.floor(quantity))
+function Card:addQty(quantity, dontupdatecost)
+	self:setQty(self:getQty() + math.floor(quantity), dontupdatecost)
 end
 
-function Card:subQty(quantity, dont_dissolve)
+function Card:subQty(quantity, dont_dissolve, dontupdatecost)
 	if quantity >= self:getQty() and not dont_dissolve then
 		self:setQty(0)
 		self.ignorestacking = true
 		self:start_dissolve()
 	else
-		self:setQty(math.max(0, self:getQty() - math.ceil(quantity)))
+		self:setQty(math.max(0, self:getQty() - math.ceil(quantity)), dontupdatecost)
 	end
 end
 
 function Card:CanStack()
 	if self.area and G.consumeables and self.area ~= G.consumeables then
+		return false
+	elseif self.ability and (self.ability.set == 'Booster' or self.ability.set == 'Voucher') then
 		return false
 	elseif CFG.NegativesOnly and not (self.edition and self.edition.negative) then
 		return false
@@ -235,7 +237,7 @@ function Card:CanDivide()
 end
 
 function Card:CanBulkUse(ignoreunsafe)
-	return (not ignoreunsafe and CFG.UnsafeMode) or (not self.config.center.no_bulkuse and ((self.config.center and (type(self.config.center.can_bulk_use) == 'function' and self.config.center:can_bulk_use() or (self.config.center.can_bulk_use or (self.config.center.bulk_use and (type(self.config.center.bulk_use) == 'function'))))) or tablecontains(BulkUsable, self.ability.set) or tablecontains(BulkUsableIndividual, self.config.center_key)))
+	return (not ignoreunsafe and CFG.UnsafeMode) or not self.config.center.no_bulkuse and ((self.config.center and (type(self.config.center.can_bulk_use) == 'function' and self.config.center:can_bulk_use() or (self.config.center.can_bulk_use or (self.config.center.bulk_use and (type(self.config.center.bulk_use) == 'function'))))) or tablecontains(BulkUsable, self.ability.set) or tablecontains(BulkUsableIndividual, self.config.center_key))
 end
 
 function Card:getmaxuse()
@@ -358,7 +360,7 @@ function Card:use_consumeable(area, copier)
 	local uselim = self.OverrideBulkUseLimit or NaiveBulkUseCancel
 	local qty = self:getQty()
 	if qty <= 0 then
-		self:setQty(1)
+		self:setQty(1, true)
 		qty = 1
 	end
 	if self.ability then
@@ -484,7 +486,7 @@ G.FUNCS.can_split_card = function(e)
 end
 
 function Card:MergeAvailable()
-	if ((self.config or {}).center or {}).set ~= 'Joker' then
+	if ((self.config or {}).center or {}).set ~= 'Joker' and ((self.config or {}).center or {}).set ~= 'Booster' then
 		for k, v in pairs(G.consumeables.cards) do
 			if v then
 				if v ~= self and (v.config or {}).center_key == (self.config or {}).center_key and ((v.edition or {}).type or '') == ((self.edition or {}).type or '') then
@@ -1020,7 +1022,7 @@ end
 local costref = Card.set_cost
 function Card:set_cost()
 	costref(self)
-	self.sell_cost = self.sell_cost * ((self.ability or {}).qty or 1)
+	self.sell_cost = self.sell_cost * math.max(1, (self.ability or {}).qty or 1)
     self.sell_cost_label = self.facing == 'back' and '?' or self.sell_cost
 end
 
