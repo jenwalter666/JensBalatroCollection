@@ -6,7 +6,7 @@
 --- MOD_DESCRIPTION: Some functions that I commonly use which some people might find a use for
 --- BADGE_COLOR: 000000
 --- PREFIX: jenlib
---- VERSION: 0.3.1
+--- VERSION: 0.3.2
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --Global table, don't modify!
@@ -254,6 +254,8 @@ end
 
 local invalid_values = {
 	'naneinf',
+	'nane0',
+	'-nane0',
 	'nan',
 	'inf',
 	'-naneinf',
@@ -266,7 +268,7 @@ local invalid_values = {
 --Checks if a number is not an actual number (e.g. nan, inf)
 function jl.invalid_number(num)
 	local str = string.lower(number_format(num))
-	return jl.bf(num, invalid_values)
+	return jl.bf(str, invalid_values)
 end
 
 --Easier way of doing chance rolls
