@@ -7,7 +7,7 @@
 --- PRIORITY: 98999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
 --- BADGE_COLOR: 009cff
 --- PREFIX: aurinko
---- VERSION: 0.4.10
+--- VERSION: 0.4.11
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --[[
@@ -507,7 +507,7 @@ function level_up_hand(card, hand, instant, amount)
 						if predicted_level < 1 then
 							quota = quota + math.abs(predicted_level) + 1
 						end
-						level_up_hand(card, hand, instant, quota)
+						level_up_hand(card, hand, instant, quota, true, true)
 					end
 					card.aurinko_already_repeated = false
 				end
