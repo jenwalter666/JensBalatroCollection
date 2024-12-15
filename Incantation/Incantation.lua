@@ -7,7 +7,7 @@
 --- PRIORITY: 89999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
 --- BADGE_COLOR: 000000
 --- PREFIX: inc
---- VERSION: 0.5.9
+--- VERSION: 0.5.10
 --- LOADER_VERSION_GEQ: 1.0.0
 
 Incantation = {consumable_in_use = false, accelerate = false} --will port more things over to this global later, but for now it's going to be mostly empty
@@ -1026,39 +1026,41 @@ function Card:set_cost()
     self.sell_cost_label = self.facing == 'back' and '?' or self.sell_cost
 end
 
-SMODS.Joker:take_ownership('perkeo', {
-	name = "Perkeo (Incantation)",
-	loc_vars = function(self, info_queue, center)
-		info_queue[#info_queue+1] = {key = 'e_negative_consumable', set = 'Edition', config = {extra = 1}}
-		return {vars = {center.ability.extra}}
-	end,
-	calculate = function(self, card, context)
-		if context.ending_shop then
-			if G.consumeables.cards[1] then
-				G.E_MANAGER:add_event(Event({
-					func = function() 
-						local total, checked, center = 0, 0, nil
-						for i = 1, #G.consumeables.cards do
-							total = total + (G.consumeables.cards[i]:getQty())
-						end
-						local poll = pseudorandom(pseudoseed('perkeo'))*total
-						for i = 1, #G.consumeables.cards do
-							checked = checked + (G.consumeables.cards[i]:getQty())
-							if checked >= poll then
-								center = G.consumeables.cards[i]
-								break
+if not (SMODS.Mods['jen'] or {}).can_load then
+	SMODS.Joker:take_ownership('perkeo', {
+		name = "Perkeo (Incantation)",
+		loc_vars = function(self, info_queue, center)
+			info_queue[#info_queue+1] = {key = 'e_negative_consumable', set = 'Edition', config = {extra = 1}}
+			return {vars = {center.ability.extra}}
+		end,
+		calculate = function(self, card, context)
+			if context.ending_shop then
+				if G.consumeables.cards[1] then
+					G.E_MANAGER:add_event(Event({
+						func = function() 
+							local total, checked, center = 0, 0, nil
+							for i = 1, #G.consumeables.cards do
+								total = total + (G.consumeables.cards[i]:getQty())
 							end
-						end
-						local card = copy_card(center, nil)
-						card.ability.qty = 1
-						card:set_edition({negative = true}, true)
-						card:add_to_deck()
-						G.consumeables:emplace(card) 
-						return true
-					end}))
-				card_eval_status_text(context.blueprint_card or card, 'extra', nil, nil, nil, {message = localize('k_duplicated_ex')})
-				return {calculated = true}
+							local poll = pseudorandom(pseudoseed('perkeo'))*total
+							for i = 1, #G.consumeables.cards do
+								checked = checked + (G.consumeables.cards[i]:getQty())
+								if checked >= poll then
+									center = G.consumeables.cards[i]
+									break
+								end
+							end
+							local card = copy_card(center, nil)
+							card.ability.qty = 1
+							card:set_edition({negative = true}, true)
+							card:add_to_deck()
+							G.consumeables:emplace(card) 
+							return true
+						end}))
+					card_eval_status_text(context.blueprint_card or card, 'extra', nil, nil, nil, {message = localize('k_duplicated_ex')})
+					return {calculated = true}
+				end
 			end
 		end
-	end
-})
+	})
+end
