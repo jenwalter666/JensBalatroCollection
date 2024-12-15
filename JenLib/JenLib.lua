@@ -6,7 +6,7 @@
 --- MOD_DESCRIPTION: Some functions that I commonly use which some people might find a use for
 --- BADGE_COLOR: 000000
 --- PREFIX: jenlib
---- VERSION: 0.3.2
+--- VERSION: 0.3.3
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --Global table, don't modify!
@@ -20,6 +20,54 @@ function jl.bf(needle, haystack)
 		if type(v) == 'string' and v == needle then return true end
 	end
 	return false
+end
+
+--Plays the dissolve animation on a card without actually removing it
+function Card:fake_dissolve(dissolve_colours, silent, dissolve_time_fac, no_juice)
+    local dissolve_time = 0.7*(dissolve_time_fac or 1)
+    self.dissolve = 0
+    self.dissolve_colours = dissolve_colours
+        or {G.C.BLACK, G.C.ORANGE, G.C.RED, G.C.GOLD, G.C.JOKER_GREY}
+    if not no_juice then self:juice_up() end
+    local childParts = Particles(0, 0, 0,0, {
+        timer_type = 'TOTAL',
+        timer = 0.01*dissolve_time,
+        scale = 0.1,
+        speed = 2,
+        lifespan = 0.7*dissolve_time,
+        attach = self,
+        colours = self.dissolve_colours,
+        fill = true
+    })
+    G.E_MANAGER:add_event(Event({
+        trigger = 'after',
+        blockable = false,
+        delay =  0.7*dissolve_time,
+        func = (function() childParts:fade(0.3*dissolve_time) return true end)
+    }))
+    if not silent then 
+        G.E_MANAGER:add_event(Event({
+            blockable = false,
+            func = (function()
+                    play_sound('whoosh2', math.random()*0.2 + 0.9,0.5)
+                    play_sound('crumple'..math.random(1, 5), math.random()*0.2 + 0.9,0.5)
+                return true end)
+        }))
+    end
+    G.E_MANAGER:add_event(Event({
+        trigger = 'ease',
+        blockable = false,
+        ref_table = self,
+        ref_value = 'dissolve',
+        ease_to = 1,
+        delay =  1*dissolve_time,
+        func = (function(t) return t end)
+    }))
+    G.E_MANAGER:add_event(Event({
+        trigger = 'after',
+        blockable = false,
+        delay =  1.05*dissolve_time,
+    }))
 end
 
 --Grabs a random element from a table that's not numerically indexed (e.g. it has elements with strings for keys)
@@ -503,25 +551,79 @@ function Q(fc, de, t, tr, bl, ba)
 	}))
 end
 
+--Gets a Planet card by its hand type, returns nothing if not found
+function jl.planethand(hand)
+	local key
+	for k, v in pairs(G.P_CENTER_POOLS.Planet) do
+		if v.config.hand_type == hand then
+			key = v.key
+			break
+		end
+	end
+	return key
+end
+
 --Gets a random key, filtered with flags. Default functionality is getting a random consumable that is not hidden
-function jl.rnd(seed, excluded_flags, pool, attempts)
+function jl.rnd(seed, excluded_flags, pool, ignore_pooling, attempts)
 	excluded_flags = excluded_flags or {'hidden', 'no_doe', 'no_grc'}
 	local selection = 'n/a'
 	local passes = 0
 	local tries = attempts or 500
+	local pooling = false
 	while true do
+		pooling = false
 		tries = tries - 1
 		passes = 0
 		selection = G.P_CENTERS[pseudorandom_element(pool or G.P_CENTER_POOLS.Consumeables, pseudoseed(seed or 'jlrnd')).key]
+		if ignore_pooling then
+			pooling = true
+		else
+			if selection.in_pool and selection:in_pool() then
+				pooling = true
+			elseif not selection.in_pool then
+				pooling = true
+			end
+		end
 		for k, v in pairs(excluded_flags) do
 			if not selection[v] then
 				passes = passes + 1
 			end
 		end
-		if passes >= #excluded_flags or tries <= 0 then
+		if (pooling and passes >= #excluded_flags) or tries <= 0 then
 			return selection
 		end
 	end
+end
+
+--Simplified way of create_card(<set>, <area>, nil, nil, nil, nil, nil, <seed>)
+function jl.rndcard(set, area, seed)
+	return create_card(set, area, nil, nil, nil, nil, nil, seed or 'jlrndcard')
+end
+
+--Simplified way to create a specific card
+function jl.card(key)
+	if G.P_CENTERS[key] then
+		return create_card(G.P_CENTERS[key].set, (G.P_CENTERS[key].set == 'Joker' and G.jokers or G.consumeables), nil, nil, nil, nil, key, 'jlspecificcard')
+	end
+	return nil
+end
+
+--Creates a "raw card"
+function jl.rawcard(key, sizemul, shiftx, shifty)
+	sizemul = sizemul or 1
+	shiftx = shiftx or 1
+	shifty = shifty or 1
+	local ncard = Card(
+		(G.play.T.x * shiftx) + G.play.T.w / 2 - G.CARD_W * sizemul / 2,
+		(G.play.T.y * shifty) + G.play.T.h / 2 - G.CARD_H * sizemul / 2,
+		G.CARD_W * sizemul,
+		G.CARD_H * sizemul,
+		G.P_CARDS.empty,
+		G.P_CENTERS[key],
+		{ bypass_discovery_center = true, bypass_discovery_ui = true }
+	)
+	ncard:start_materialize()
+	return ncard
 end
 
 --Redeems a voucher by key, leave blank for random
