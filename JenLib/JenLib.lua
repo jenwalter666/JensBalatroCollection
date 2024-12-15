@@ -658,6 +658,32 @@ end
 ]]
 
 function Card:add_dynatext(top, bottom, delay)
+	if type(top) == 'string' then
+		top = DynaText({
+			string = top,
+			colours = { G.C.UI.TEXT_LIGHT },
+			rotate = 1,
+			shadow = true,
+			bump = true,
+			float = true,
+			scale = 0.9,
+			pop_in = 0.6 / G.SPEEDFACTOR,
+			pop_in_rate = 1.5 * G.SPEEDFACTOR,
+		})
+	end
+	if type(bottom) == 'string' then
+		bottom = DynaText({
+			string = top,
+			colours = { G.C.UI.TEXT_LIGHT },
+			rotate = 1,
+			shadow = true,
+			bump = true,
+			float = true,
+			scale = 0.9,
+			pop_in = 0.6 / G.SPEEDFACTOR,
+			pop_in_rate = 1.5 * G.SPEEDFACTOR,
+		})
+	end
 	if self.jenlib_alreadyhasdynatext then self:remove_dynatext() end
 	G.E_MANAGER:add_event(Event({trigger = 'after', delay = delay or 0.4, func = function()
 		if top then
