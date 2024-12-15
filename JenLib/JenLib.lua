@@ -673,7 +673,7 @@ function Card:add_dynatext(top, bottom, delay)
 	end
 	if type(bottom) == 'string' then
 		bottom = DynaText({
-			string = top,
+			string = bottom,
 			colours = { G.C.UI.TEXT_LIGHT },
 			rotate = 1,
 			shadow = true,
@@ -687,11 +687,11 @@ function Card:add_dynatext(top, bottom, delay)
 	if self.jenlib_alreadyhasdynatext then self:remove_dynatext() end
 	G.E_MANAGER:add_event(Event({trigger = 'after', delay = delay or 0.4, func = function()
 		if top then
-			top_dynatext = DynaText(top)
+			top_dynatext = top
 			self.children.jenlib_topdyna = UIBox{definition = {n = G.UIT.ROOT, config = {align = 'tm', r = 0.15, colour = G.C.CLEAR, padding = 0.15}, nodes = {{n = G.UIT.O, config = {object = top_dynatext}}}},config = {align="tm", offset = {x=0,y=0},parent = self}}
 		end
 		if bottom then
-			bot_dynatext = DynaText(bottom)
+			bot_dynatext = bottom
 			self.children.jenlib_botdyna = UIBox{definition = {n = G.UIT.ROOT, config = {align = 'tm', r = 0.15, colour = G.C.CLEAR, padding = 0.15}, nodes = {{n = G.UIT.O, config = {object = bot_dynatext}}}},config = {align="bm", offset = {x=0,y=0},parent = self}}
 		end
 		self.jenlib_alreadyhasdynatext = true
