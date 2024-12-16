@@ -667,8 +667,8 @@ function Card:add_dynatext(top, bottom, delay)
 			bump = true,
 			float = true,
 			scale = 0.9,
-			pop_in = 0.6 / G.SPEEDFACTOR,
-			pop_in_rate = 1.5 * G.SPEEDFACTOR,
+			pop_in = 0.6 / G.SETTINGS.GAMESPEED,
+			pop_in_rate = 1.5 * G.SETTINGS.GAMESPEED,
 		})
 	end
 	if type(bottom) == 'string' then
@@ -680,8 +680,8 @@ function Card:add_dynatext(top, bottom, delay)
 			bump = true,
 			float = true,
 			scale = 0.9,
-			pop_in = 0.6 / G.SPEEDFACTOR,
-			pop_in_rate = 1.5 * G.SPEEDFACTOR,
+			pop_in = 0.6 / G.SETTINGS.GAMESPEED,
+			pop_in_rate = 1.5 * G.SETTINGS.GAMESPEED,
 		})
 	end
 	if self.jenlib_alreadyhasdynatext then self:remove_dynatext() end
@@ -694,8 +694,8 @@ function Card:add_dynatext(top, bottom, delay)
 			bot_dynatext = bottom
 			self.children.jenlib_botdyna = UIBox{definition = {n = G.UIT.ROOT, config = {align = 'tm', r = 0.15, colour = G.C.CLEAR, padding = 0.15}, nodes = {{n = G.UIT.O, config = {object = bot_dynatext}}}},config = {align="bm", offset = {x=0,y=0},parent = self}}
 		end
-		self.jenlib_alreadyhasdynatext = true
 	return true end }))
+	self.jenlib_alreadyhasdynatext = true
 end
 
 function Card:remove_dynatext(delay, speed)
