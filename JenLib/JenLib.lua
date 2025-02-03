@@ -6,7 +6,7 @@
 --- MOD_DESCRIPTION: Some functions that I commonly use which some people might find a use for
 --- BADGE_COLOR: 000000
 --- PREFIX: jenlib
---- VERSION: 0.3.4
+--- VERSION: 0.3.6
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --Global table, don't modify!
@@ -130,6 +130,21 @@ end
 --Gets the position of a card on X and Y
 function Card:pos()
 	return self:xpos(), self:ypos()
+end
+
+--Gets the total number of times a type of consumable has been used (e.g. Tarots, Planets, etc.)
+--ex. jl.ctu('Tarot') will get the total number of Tarots used in run
+--Not case-sensitive; 'tarot', 'TAROT', 'TaRoT', etc, will work as well
+function jl.ctu(set)
+	local count = 0
+	if not G.GAME then return count end
+	if type(G.GAME.consumeable_usage) ~= 'table' then return count end
+	for k, v in pairs(G.GAME.consumeable_usage) do
+		if string.lower(v.set or '') == string.lower(set) then
+			count = count + (v.count or 1)
+		end
+	end
+	return count
 end
 
 --A more minimalist function for changing the hand UI
@@ -361,16 +376,21 @@ function jl.rd(time, queue)
 	realdelay(time, queue)
 end
 
---Useful for enhancements
-function jl.sc(context)
+--Use in a joker/card to check if it's the one currently scoring
+function jl.scj(context)
 	return context.cardarea and context.cardarea == G.play and not context.before and not context.after and not context.repetition
+end
+
+--This is for better calc in the future, but for now just reuse jl.scj
+function jl.sc(context)
+	return jl.scj(context) --context.cardarea and context.cardarea == G.play and context.main_scoring
 end
 
 --Gets the most-played hand
 function jl.favhand()
 	if not G.GAME or not G.GAME.current_round then return 'High Card' end
 	local chosen_hand = 'High Card'
-	local _handname, _played, _order = 'High Card', -1, 100
+	local _handname, _played, _order = 'High Card', -1, -1
 	for k, v in pairs(G.GAME.hands) do
 		if v.played > _played or (v.played == _played and _order > v.order) then 
 			_played = v.played
@@ -386,7 +406,7 @@ function jl.sfavhand()
 	if not G.GAME or not G.GAME.current_round then return 'High Card' end
 	local chosen_hand = 'High Card'
 	local firstmost = jl.favhand()
-	local _handname, _played, _order = 'High Card', -1, 100
+	local _handname, _played, _order = 'High Card', -1, -1
 	for k, v in pairs(G.GAME.hands) do
 		if k ~= firstmost and v.played > _played or (v.played == _played and _order > v.order) then 
 			_played = v.played
@@ -430,9 +450,9 @@ end
 --Gets the hand with the lowest level, prioritises lower-ranking hands
 function jl.lowhand()
 	local chosen_hand = 'High Card'
-	local lowest_level = math.huge
+	local lowest_level = 'n/a'
 	for _, v in ipairs(G.handlist) do
-		if G.GAME.hands[v].level <= lowest_level then
+		if type(lowest_level) == 'string' or G.GAME.hands[v].level <= lowest_level then --(Talisman and to_big(lowest_level) or lowest_level) then
 			chosen_hand = v
 			lowest_level = G.GAME.hands[v].level
 		end
@@ -443,9 +463,9 @@ end
 --Gets the hand with the highest level, prioritises higher-ranking hands
 function jl.hihand()
 	local chosen_hand = 'High Card'
-	local highest_level = -math.huge
+	local highest_level = 'n/a'
 	for _, v in ipairs(G.handlist) do
-		if G.GAME.hands[v].level > lowest_level then
+		if type(highest_level) == 'string' or G.GAME.hands[v].level > highest_level then --(Talisman and to_big(highest_level) or highest_level) then
 			chosen_hand = v
 			highest_level = G.GAME.hands[v].level
 		end
@@ -549,6 +569,12 @@ function Q(fc, de, t, tr, bl, ba)
 		blocking = ba,
 		func = fc
 	}))
+end
+
+--Does a recursive Q() call, I do this to make events happen later but it will add noticeable wait at high recursion
+function QR(fc, count, de, t, tr, bl, ba)
+	if not count then count = 0 end
+	Q(function() if count <= 0 then fc() else Q(fc, count - 1, de, t, tr, bl, ba) end return true end)
 end
 
 --Gets a Planet card by its hand type, returns nothing if not found
