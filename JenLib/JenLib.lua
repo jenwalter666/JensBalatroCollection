@@ -6,7 +6,7 @@
 --- MOD_DESCRIPTION: Some functions that I commonly use which some people might find a use for
 --- BADGE_COLOR: 000000
 --- PREFIX: jenlib
---- VERSION: 0.3.6
+--- VERSION: 0.3.5
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --Global table, don't modify!
