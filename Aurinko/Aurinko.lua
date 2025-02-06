@@ -7,7 +7,7 @@
 --- PRIORITY: 98999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
 --- BADGE_COLOR: 009cff
 --- PREFIX: aurinko
---- VERSION: 0.4.13
+--- VERSION: 0.4.14
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --[[
@@ -302,7 +302,7 @@ function level_up_hand(card, hand, instant, amount)
 								return true end }))
 								update_hand_text({delay = 0}, {chips = op .. number_format(factor) .. ' (x' .. number_format(amount) .. ')', StatusText = true})
 								update_hand_text({delay = instant and 0 or HoldDelay}, {chips = G.GAME.hands[hand].chips})
-							else
+							elseif Aurinko.VerboseMode then
 								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
 									play_sound('talisman_eeechip')
 									card:juice_up(0.8, 0.5)
