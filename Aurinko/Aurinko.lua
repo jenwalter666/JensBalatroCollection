@@ -7,7 +7,7 @@
 --- PRIORITY: 98999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
 --- BADGE_COLOR: 009cff
 --- PREFIX: aurinko
---- VERSION: 0.4.14
+--- VERSION: 0.4.11
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --[[
@@ -37,10 +37,6 @@ end
 
 You can use the whitelist to add cards you want to be affected by Aurinko's edition-applying system
 ]]
-
-Aurinko = {
-	VerboseMode = false
-}
 
 if not AurinkoAddons then
 	AurinkoAddons = {}
@@ -100,7 +96,7 @@ function level_up_hand(card, hand, instant, amount)
 							card:juice_up(0.8, 0.5)
 						return true end }))
 						update_hand_text({delay = instant and 0 or HoldDelay}, {mult = G.GAME.hands[hand].mult, StatusText = true})
-					elseif Aurinko.VerboseMode then
+					else
 						G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
 							play_sound('multhit1')
 							card:juice_up(0.8, 0.5)
@@ -117,7 +113,7 @@ function level_up_hand(card, hand, instant, amount)
 							card:juice_up(0.8, 0.5)
 						return true end }))
 						update_hand_text({delay = instant and 0 or HoldDelay}, {chips = G.GAME.hands[hand].chips, StatusText = true})
-					elseif Aurinko.VerboseMode then
+					else
 						G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
 							play_sound('chips1')
 							card:juice_up(0.8, 0.5)
@@ -142,7 +138,7 @@ function level_up_hand(card, hand, instant, amount)
 						return true end }))
 						update_hand_text({delay = 0}, {mult = op .. number_format(factor), StatusText = true})
 						update_hand_text({delay = instant and 0 or HoldDelay}, {mult = G.GAME.hands[hand].mult})
-					elseif Aurinko.VerboseMode then
+					else
 						G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
 							play_sound('multhit2')
 							card:juice_up(0.8, 0.5)
@@ -166,12 +162,12 @@ function level_up_hand(card, hand, instant, amount)
 								card:juice_up(0.8, 0.5)
 							return true end }))
 							update_hand_text({delay = instant and 0 or HoldDelay}, {chips = G.GAME.hands[hand].chips, StatusText = true})
-						elseif Aurinko.VerboseMode then
+						else
 							G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
 								play_sound('chips1')
 								card:juice_up(0.8, 0.5)
 							return true end }))
-							update_hand_text({delay = instant and 0 or HoldDelay}, {chips = (factor > 0 and '+' or '-') .. number_format(math.abs(factor)), StatusText = true})
+							update_hand_text({delay = instant and 0 or HoldDelay}, {chips = (to_big(factor) > to_big(0) and '+' or '-') .. number_format(math.abs(factor)), StatusText = true})
 						end
 					end
 					if obj.mult then
@@ -184,18 +180,18 @@ function level_up_hand(card, hand, instant, amount)
 								card:juice_up(0.8, 0.5)
 							return true end }))
 							update_hand_text({delay = instant and 0 or HoldDelay}, {mult = G.GAME.hands[hand].mult, StatusText = true})
-						elseif Aurinko.VerboseMode then
+						else
 							G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
 								play_sound('multhit1')
 								card:juice_up(0.8, 0.5)
 							return true end }))
-							update_hand_text({delay = instant and 0 or HoldDelay}, {mult = (factor > 0 and '+' or '-') .. number_format(math.abs(factor)), StatusText = true})
+							update_hand_text({delay = instant and 0 or HoldDelay}, {mult = (factor > to_big(0) and '+' or '-') .. number_format(math.abs(factor)), StatusText = true})
 						end
 					end
 					if talisman then
 						if obj.x_chips then
 							factor = to_big(obj.x_chips) ^ math.abs(amount)
-							if amount > 0 then
+							if to_big(amount) > to_big(0) then
 								op = 'x'
 								G.GAME.hands[hand].s_chips = (math.max(get_s_chips(hand) * factor, 1))
 								G.GAME.hands[hand].chips = (math.max(G.GAME.hands[hand].chips * factor, 1))
@@ -211,7 +207,7 @@ function level_up_hand(card, hand, instant, amount)
 								return true end }))
 								update_hand_text({delay = 0}, {chips = op .. number_format(factor), StatusText = true})
 								update_hand_text({delay = instant and 0 or HoldDelay}, {chips = G.GAME.hands[hand].chips})
-							elseif Aurinko.VerboseMode then
+							else
 								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
 									play_sound('talisman_xchip')
 									card:juice_up(0.8, 0.5)
@@ -221,7 +217,7 @@ function level_up_hand(card, hand, instant, amount)
 						end
 						if obj.e_chips then
 							factor = math.abs(amount) == 1 and obj.e_chips or to_big(obj.e_chips) ^ math.abs(amount)
-							if amount > 0 then
+							if amount > to_big(0) then
 								op = '^'
 								G.GAME.hands[hand].s_chips = (math.max(get_s_chips(hand) ^ factor, 1))
 								G.GAME.hands[hand].chips = (math.max(G.GAME.hands[hand].chips ^ factor, 1))
@@ -237,7 +233,7 @@ function level_up_hand(card, hand, instant, amount)
 								return true end }))
 								update_hand_text({delay = 0}, {chips = op .. number_format(factor), StatusText = true})
 								update_hand_text({delay = instant and 0 or HoldDelay}, {chips = G.GAME.hands[hand].chips})
-							elseif Aurinko.VerboseMode then
+							else
 								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
 									play_sound('talisman_echip')
 									card:juice_up(0.8, 0.5)
@@ -269,7 +265,7 @@ function level_up_hand(card, hand, instant, amount)
 								return true end }))
 								update_hand_text({delay = 0}, {chips = op .. number_format(factor) .. ' (x' .. number_format(amount) .. ')', StatusText = true})
 								update_hand_text({delay = instant and 0 or HoldDelay}, {chips = G.GAME.hands[hand].chips})
-							elseif Aurinko.VerboseMode then
+							else
 								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
 									play_sound('talisman_eechip')
 									card:juice_up(0.8, 0.5)
@@ -302,7 +298,7 @@ function level_up_hand(card, hand, instant, amount)
 								return true end }))
 								update_hand_text({delay = 0}, {chips = op .. number_format(factor) .. ' (x' .. number_format(amount) .. ')', StatusText = true})
 								update_hand_text({delay = instant and 0 or HoldDelay}, {chips = G.GAME.hands[hand].chips})
-							elseif Aurinko.VerboseMode then
+							else
 								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
 									play_sound('talisman_eeechip')
 									card:juice_up(0.8, 0.5)
@@ -335,7 +331,7 @@ function level_up_hand(card, hand, instant, amount)
 								return true end }))
 								update_hand_text({delay = 0}, {chips = op .. number_format(factor) .. ' (x' .. number_format(amount) .. ')', StatusText = true})
 								update_hand_text({delay = instant and 0 or HoldDelay}, {chips = G.GAME.hands[hand].chips})
-							elseif Aurinko.VerboseMode then
+							else
 								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
 									play_sound('talisman_eeechip')
 									card:juice_up(0.8, 0.5)
@@ -363,7 +359,7 @@ function level_up_hand(card, hand, instant, amount)
 							return true end }))
 							update_hand_text({delay = 0}, {mult = op .. number_format(factor), StatusText = true})
 							update_hand_text({delay = instant and 0 or HoldDelay}, {mult = G.GAME.hands[hand].mult})
-						elseif Aurinko.VerboseMode then
+						else
 							G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
 								play_sound('multhit2')
 								card:juice_up(0.8, 0.5)
@@ -374,7 +370,7 @@ function level_up_hand(card, hand, instant, amount)
 					if SMODS.Mods['Talisman'] then
 						if obj.e_mult then
 							factor = math.abs(amount) == 1 and obj.e_mult or to_big(obj.e_mult) ^ math.abs(amount)
-							if amount > 0 then
+							if amount > to_big(0) then
 								op = '^'
 								G.GAME.hands[hand].s_mult = (math.max(get_s_mult(hand) ^ factor, 1))
 								G.GAME.hands[hand].mult = (math.max(G.GAME.hands[hand].mult ^ factor, 1))
@@ -390,7 +386,7 @@ function level_up_hand(card, hand, instant, amount)
 								return true end }))
 								update_hand_text({delay = 0}, {mult = op .. number_format(factor), StatusText = true})
 								update_hand_text({delay = instant and 0 or HoldDelay}, {mult = G.GAME.hands[hand].mult})
-							elseif Aurinko.VerboseMode then
+							else
 								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
 									play_sound('talisman_emult')
 									card:juice_up(0.8, 0.5)
@@ -422,7 +418,7 @@ function level_up_hand(card, hand, instant, amount)
 								return true end }))
 								update_hand_text({delay = 0}, {mult = op .. number_format(factor) .. ' (x' .. number_format(amount) .. ')', StatusText = true})
 								update_hand_text({delay = instant and 0 or HoldDelay}, {mult = G.GAME.hands[hand].mult})
-							elseif Aurinko.VerboseMode then
+							else
 								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
 									play_sound('talisman_eemult')
 									card:juice_up(0.8, 0.5)
@@ -455,7 +451,7 @@ function level_up_hand(card, hand, instant, amount)
 								return true end }))
 								update_hand_text({delay = 0}, {mult = op .. number_format(factor) .. ' (x' .. number_format(amount) .. ')', StatusText = true})
 								update_hand_text({delay = instant and 0 or HoldDelay}, {mult = G.GAME.hands[hand].mult})
-							elseif Aurinko.VerboseMode then
+							else
 								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
 									play_sound('talisman_eeemult')
 									card:juice_up(0.8, 0.5)
@@ -488,9 +484,9 @@ function level_up_hand(card, hand, instant, amount)
 								return true end }))
 								update_hand_text({delay = 0}, {mult = op .. number_format(factor) .. ' (x' .. number_format(amount) .. ')', StatusText = true})
 								update_hand_text({delay = instant and 0 or HoldDelay}, {mult = G.GAME.hands[hand].mult})
-							elseif Aurinko.VerboseMode then
+							else
 								G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.3, func = function()
-									play_sound('talisman_eeemult')
+									play_sound('talisman_eemult')
 									card:juice_up(0.8, 0.5)
 								return true end }))
 								update_hand_text({delay = instant and 0 or HoldDelay}, {mult = op .. number_format(factor) .. ' (x' .. number_format(amount) .. ')', StatusText = true})
@@ -508,7 +504,7 @@ function level_up_hand(card, hand, instant, amount)
 						card.aurinko_already_repeated = true
 						local quota = (obj.repetitions or obj.retriggers) * amount
 						local predicted_level = G.GAME.hands[hand].level + quota
-						if predicted_level < 1 then
+						if predicted_level < to_big(1) then
 							quota = quota + math.abs(predicted_level) + 1
 						end
 						level_up_hand(card, hand, instant, quota, true, true)
@@ -517,6 +513,10 @@ function level_up_hand(card, hand, instant, amount)
 				end
 			end
 		end
+		G.E_MANAGER:add_event(Event({
+			trigger = 'immediate',
+			func = (function() check_for_unlock{type = 'upgrade_hand', hand = hand, level = G.GAME.hands[hand].level} return true end)
+		}))
 	if collectgarbage("count") > 1048576 then
 		collectgarbage("collect")
 	end
