@@ -101,7 +101,7 @@ function level_up_hand(card, hand, instant, amount)
 							play_sound('multhit1')
 							card:juice_up(0.8, 0.5)
 						return true end }))
-						update_hand_text({delay = instant and 0 or HoldDelay}, {mult = (amount > 0 and '+' or '-') .. number_format(math.abs(factor)), StatusText = true})
+						update_hand_text({delay = instant and 0 or HoldDelay}, {mult = (to_big(amount) > to_big(0) and '+' or '-') .. number_format(math.abs(factor)), StatusText = true})
 					end
 				elseif card.edition.foil then
 					factor = G.P_CENTERS.e_foil.config.extra * amount
@@ -118,11 +118,11 @@ function level_up_hand(card, hand, instant, amount)
 							play_sound('chips1')
 							card:juice_up(0.8, 0.5)
 						return true end }))
-						update_hand_text({delay = instant and 0 or HoldDelay}, {chips = (amount > 0 and '+' or '-') .. number_format(math.abs(factor)), StatusText = true})
+						update_hand_text({delay = instant and 0 or HoldDelay}, {chips = (to_big(amount) > to_big(0) and '+' or '-') .. number_format(math.abs(factor)), StatusText = true})
 					end
 				elseif card.edition.polychrome then
 					factor = (talisman and to_big(G.P_CENTERS.e_polychrome.config.extra) or G.P_CENTERS.e_polychrome.config.extra) ^ math.abs(amount)
-					if amount > 0 then
+					if to_big(amount) > to_big(0) then
 						op = 'x'
 						G.GAME.hands[hand].s_mult = (math.max(get_s_mult(hand) * factor, 1))
 						G.GAME.hands[hand].mult = (math.max(G.GAME.hands[hand].mult * factor, 1))
@@ -185,7 +185,7 @@ function level_up_hand(card, hand, instant, amount)
 								play_sound('multhit1')
 								card:juice_up(0.8, 0.5)
 							return true end }))
-							update_hand_text({delay = instant and to_big(0) or HoldDelay}, {mult = (factor > to_big(0) and '+' or '-') .. number_format(math.abs(factor)), StatusText = true})
+							update_hand_text({delay = instant and to_big(0) or HoldDelay}, {mult = (to_big(factor) > to_big(0) and '+' or '-') .. number_format(math.abs(factor)), StatusText = true})
 						end
 					end
 					if talisman then
@@ -245,9 +245,9 @@ function level_up_hand(card, hand, instant, amount)
 							factor = to_big(obj.ee_chips)
 							memory = amount
 							amount = math.min(math.max(math.floor(amount + 0.5), -HyperoperationLimit), HyperoperationLimit)
-							if amount >= 0 then
+							if to_big(amount) >= 0 then
 								op = '^^'
-								for i = 1, amount do
+								for i = 1, #amount do
 									G.GAME.hands[hand].s_chips = (math.max(get_s_chips(hand):arrow(2, factor), 1))
 									G.GAME.hands[hand].chips = (math.max(G.GAME.hands[hand].chips:arrow(2, factor), 1))
 								end
@@ -278,9 +278,9 @@ function level_up_hand(card, hand, instant, amount)
 							factor = to_big(obj.eee_chips)
 							memory = amount
 							amount = math.min(math.max(math.floor(amount + 0.5), -HyperoperationLimit), HyperoperationLimit)
-							if amount >= 0 then
+							if amount >= to_big(0) then
 								op = '^^^'
-								for i = 1, amount do
+								for i = 1, #amount do
 									G.GAME.hands[hand].s_chips = (math.max(get_s_chips(hand):arrow(3, factor), 1))
 									G.GAME.hands[hand].chips = (math.max(G.GAME.hands[hand].chips:arrow(3, factor), 1))
 								end
@@ -398,7 +398,7 @@ function level_up_hand(card, hand, instant, amount)
 							factor = to_big(obj.ee_mult)
 							memory = amount
 							amount = math.min(math.max(math.floor(amount + 0.5), -HyperoperationLimit), HyperoperationLimit)
-							if amount >= 0 then
+							if to_big(amount) >= to_big(0) then
 								op = '^^'
 								for i = 1, amount do
 									G.GAME.hands[hand].s_mult = (math.max(get_s_mult(hand):arrow(2, factor), 1))
@@ -431,9 +431,9 @@ function level_up_hand(card, hand, instant, amount)
 							factor = to_big(obj.eee_mult)
 							memory = amount
 							amount = math.min(math.max(math.floor(amount + 0.5), -HyperoperationLimit), HyperoperationLimit)
-							if amount >= 0 then
+							if amount >= to_big(0) then
 								op = '^^^'
-								for i = 1, amount do
+								for i = 1, #amount do
 									G.GAME.hands[hand].s_mult = (math.max(get_s_mult(hand):arrow(3, factor), 1))
 									G.GAME.hands[hand].mult = (math.max(G.GAME.hands[hand].mult:arrow(3, factor), 1))
 								end
