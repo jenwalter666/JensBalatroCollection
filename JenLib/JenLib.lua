@@ -390,9 +390,10 @@ end
 function jl.favhand()
 	if not G.GAME or not G.GAME.current_round then return 'High Card' end
 	local chosen_hand = 'High Card'
-	local _handname, _played, _order = 'High Card', -1, -1
+	local _handname, _played, _order = 'High Card', 0, -1 / 0
 	for k, v in pairs(G.GAME.hands) do
 		if v.played > _played or (v.played == _played and _order > v.order) then 
+			_order = v.order
 			_played = v.played
 			_handname = k
 		end
@@ -406,9 +407,10 @@ function jl.sfavhand()
 	if not G.GAME or not G.GAME.current_round then return 'High Card' end
 	local chosen_hand = 'High Card'
 	local firstmost = jl.favhand()
-	local _handname, _played, _order = 'High Card', -1, -1
+	local _handname, _played, _order = 'High Card', 0, -1 / 0
 	for k, v in pairs(G.GAME.hands) do
 		if k ~= firstmost and v.played > _played or (v.played == _played and _order > v.order) then 
+			_order = v.order
 			_played = v.played
 			_handname = k
 		end
