@@ -1,19 +1,8 @@
---- STEAMODDED HEADER
-
---- MOD_NAME: Incantation
---- MOD_ID: incantation
---- MOD_AUTHOR: [jenwalter666, MathIsFun_]
---- MOD_DESCRIPTION: Enables the ability to stack identical consumables.
---- PRIORITY: 89999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
---- BADGE_COLOR: 000000
---- PREFIX: inc
---- VERSION: 0.5.10
---- LOADER_VERSION_GEQ: 1.0.0
-
 Incantation = {consumable_in_use = false, accelerate = false} --will port more things over to this global later, but for now it's going to be mostly empty
 
 local CFG = SMODS.current_mod.config
 
+local DisplayAlignment = 'tm' --controls where to place the stack display on a card, 'cr' means "Center Right", left letter can be "t" (Top), "c" (Center), or "b" (Bottom), and right letter can be "l" (Left), "r" (Right), or "m" (Middle)
 local MaxStack = 9999
 local BulkUseLimit = 9999
 local NaiveBulkUseCancel = 100
@@ -59,78 +48,103 @@ local function tablecontains(haystack, needle)
 	return false
 end
 
-local Stackable = {
+if not Incantation.DelayStacking then
+	Incantation.DelayStacking = 0
+end
+
+Incantation.Stackable = {
 	'Planet',
 	'Tarot',
 	'Spectral'
 }
 
-local StackableIndividual = {
+Incantation.StackableIndividual = {
 	'c_black_hole',
 	'c_cry_white_hole'
 }
 
-local Divisible = {
+Incantation.Divisible = {
 	'Planet',
 	'Tarot',
 	'Spectral'
 }
 
-local DivisibleIndividual = {
+Incantation.DivisibleIndividual = {
 	'c_black_hole',
 	'c_cry_white_hole'
 }
 
-local BulkUsable = {
+Incantation.BulkUsable = {
 	'Planet'
 }
 
-local BulkUsableIndividual = {
+Incantation.BulkUsableIndividual = {
 	'c_black_hole',
 	'c_cry_white_hole'
+}
+
+Incantation.MassUsable = {
+}
+
+Incantation.MassUsableIndividual = {
+	'c_black_hole'
 }
 
 --Allow mods to add/remove their own card types to the list
 
 function AllowStacking(set)
-	if not tablecontains(Stackable, set) then
-		table.insert(Stackable, set)
+	if not tablecontains(Incantation.Stackable, set) then
+		table.insert(Incantation.Stackable, set)
 	end
 end
 
 function AllowStackingIndividual(key)
-	if not tablecontains(StackableIndividual, key) then
-		table.insert(StackableIndividual, key)
+	if not tablecontains(Incantation.StackableIndividual, key) then
+		table.insert(Incantation.StackableIndividual, key)
 	end
 end
 
 function AllowDividing(set)
 	AllowStacking(set)
-	if not tablecontains(Divisible, set) then
-		table.insert(Divisible, set)
+	if not tablecontains(Incantation.Divisible, set) then
+		table.insert(Incantation.Divisible, set)
 	end
 end
 
 function AllowDividingIndividual(key)
 	AllowStackingIndividual(key)
-	if not tablecontains(DivisibleIndividual, key) then
-		table.insert(DivisibleIndividual, key)
+	if not tablecontains(Incantation.DivisibleIndividual, key) then
+		table.insert(Incantation.DivisibleIndividual, key)
 	end
 end
 
 function AllowBulkUse(set)
 	AllowStacking(set)
 	AllowDividing(set)
-	if not tablecontains(BulkUsable, set) then
-		table.insert(BulkUsable, set)
+	if not tablecontains(Incantation.BulkUsable, set) then
+		table.insert(Incantation.BulkUsable, set)
 	end
 end
 
 function AllowBulkUseIndividual(key)
 	AllowStackingIndividual(key)
 	AllowDividingIndividual(key)
-	if not tablecontains(BulkUsableIndividual, key) then
-		table.insert(BulkUsableIndividual, key)
+	if not tablecontains(Incantation.BulkUsableIndividual, key) then
+		table.insert(Incantation.BulkUsableIndividual, key)
+	end
+end
+
+function AllowMassUsing(set)
+	AllowBulkUse(set)
+	if not tablecontains(Incantation.MassUsable, set) then
+		table.insert(Incantation.MassUsable, set)
+	end
+end
+
+function AllowMassUsingIndividual(key)
+	AllowBulkUseIndividual(key)
+	if not tablecontains(Incantation.MassUsableIndividual, key) then
+		table.insert(Incantation.MassUsableIndividual, key)
 	end
 end
 
@@ -145,7 +159,9 @@ if not IncantationAddons then
 		BulkUse = {},
 		StackingIndividual = {},
 		DividingIndividual = {},
-		BulkUseIndividual = {}
+		BulkUseIndividual = {},
+		MassUse = {},
+		MassUseIndividual = {}
 	}
 end
 
@@ -184,10 +200,32 @@ if IncantationAddons then
 			AllowBulkUseIndividual(v)
 		end
 	end
+	if #IncantationAddons.MassUse > 0 then
+		for _, v in pairs(IncantationAddons.MassUse) do
+			AllowMassUsing(v)
+		end
+	end
+	if #IncantationAddons.MassUseIndividual > 0 then
+		for _, v in pairs(IncantationAddons.MassUseIndividual) do
+			AllowMassUsingIndividual(v)
+		end
+	end
 end
 
 function Card:getQty()
-	return (self.ability or {}).qty or 1
+	return (self.ability or {}).infinite and 1 or ((self.ability or {}).qty or 1)
+end
+
+function Card:getInfinite()
+	return self.ability.infinite
+end
+
+function Card:setInfinite(inf)
+	self.ability.infinite = inf
+end
+
+function Card:toggleInfinite()
+	self:setInfinite(not self:getInfinite())
 end
 
 function Card:setQty(quantity, dontupdatecost)
@@ -216,6 +254,7 @@ function Card:subQty(quantity, dont_dissolve, dontupdatecost)
 end
 
 function Card:CanStack()
+	if (self.ability or {}).infinite then return false end
 	if self.area and G.consumeables and self.area ~= G.consumeables then
 		return false
 	elseif self.ability and (self.ability.set == 'Booster' or self.ability.set == 'Voucher') then
@@ -226,18 +265,25 @@ function Card:CanStack()
 		return true
 	end
 
-	return (self.config.center and (type(self.config.center.can_stack) == 'function' and self.config.center:can_stack() or self.config.center.can_stack)) or tablecontains(Stackable, self.ability.set) or tablecontains(StackableIndividual, self.config.center_key)
+	return (self.config.center and (type(self.config.center.can_stack) == 'function' and self.config.center:can_stack() or self.config.center.can_stack)) or tablecontains(Incantation.Stackable, self.ability.set) or tablecontains(Incantation.StackableIndividual, self.config.center_key)
 end
 
 function Card:CanDivide()
+	if (self.ability or {}).infinite then return false end
 	if CFG.StackAnything then
 		return true
 	end
-	return (self.config.center and (type(self.config.center.can_divide) == 'function' and self.config.center:can_divide() or self.config.center.can_divide)) or tablecontains(Divisible, self.ability.set) or tablecontains(DivisibleIndividual, self.config.center_key)
+	return (self.config.center and (type(self.config.center.can_divide) == 'function' and self.config.center:can_divide() or self.config.center.can_divide)) or tablecontains(Incantation.Divisible, self.ability.set) or tablecontains(Incantation.DivisibleIndividual, self.config.center_key)
 end
 
 function Card:CanBulkUse(ignoreunsafe)
-	return (not ignoreunsafe and CFG.UnsafeMode) or not self.config.center.no_bulkuse and ((self.config.center and (type(self.config.center.can_bulk_use) == 'function' and self.config.center:can_bulk_use() or (self.config.center.can_bulk_use or (self.config.center.bulk_use and (type(self.config.center.bulk_use) == 'function'))))) or tablecontains(BulkUsable, self.ability.set) or tablecontains(BulkUsableIndividual, self.config.center_key))
+	if (self.ability or {}).infinite then return false end
+	return (not ignoreunsafe and CFG.UnsafeMode) or not self.config.center.no_bulkuse and ((self.config.center and (type(self.config.center.can_bulk_use) == 'function' and self.config.center:can_bulk_use() or (self.config.center.can_bulk_use or (self.config.center.bulk_use and (type(self.config.center.bulk_use) == 'function'))))) or tablecontains(Incantation.BulkUsable, self.ability.set) or tablecontains(Incantation.BulkUsableIndividual, self.config.center_key))
+end
+
+function Card:CanMassUse()
+	if (self.ability or {}).infinite then return false end
+	return (self.config.center and (type(self.config.center.can_mass_use) == 'function' and self.config.center:can_mass_use() or self.config.center.can_mass_use)) or tablecontains(Incantation.MassUsable, self.ability.set) or tablecontains(Incantation.MassUsableIndividual, self.config.center_key)
 end
 
 function Card:getmaxuse()
@@ -323,12 +369,12 @@ function Card:split(amount, forced, fullmax)
 end
 
 function Card:try_merge()
-	if self:CanStack() and not self.ignorestacking then
+	if self:CanStack() and not self.ignorestacking and not (self.ability or {}).infinite then
 		for _, v in pairs(G.consumeables.cards) do
 
 			if CFG.NegativesOnly and not (v.edition or {}).negative then
 				-- Ignore this
-			elseif v ~= self and not v.nomerging and not v.ignorestacking and v.config.center_key == self.config.center_key and (((v.edition or {}).type or '') == ((self.edition or {}).type or '')) and (v:getQty() < (UseStackCap and MaxStack or HardLimit)) then
+			elseif v ~= self and not v.nomerging and not (v.ability or {}).infinite and not v.ignorestacking and v.config.center_key == self.config.center_key and (((v.edition or {}).type or '') == ((self.edition or {}).type or '')) and (v:getQty() < (UseStackCap and MaxStack or HardLimit)) then
 				local space = (UseStackCap and MaxStack or HardLimit) - (v:getQty())
 				v.ability.qty = (v:getQty()) + math.min((self:getQty()), space)
 				v:create_stack_display()
@@ -365,6 +411,10 @@ function Card:use_consumeable(area, copier)
 	end
 	if self.ability then
 		self.ability.qty_initial = qty
+		if self.ability.infinite then
+			qty = 99
+			uselim = 1
+		end
 	end
 	if not self.naivebulkuse and self.bulkuse and obj.bulk_use and type(obj.bulk_use) == 'function' then
 		set_consumeable_usage(self, qty)
@@ -432,9 +482,10 @@ function Card:use_consumeable(area, copier)
 				self.OverrideBulkUseLimit = nil
 				if obj.keep_on_use and obj:keep_on_use(self) then
 					self.ignorestacking = false
-					self.ability.qty = obj.keep_on_use_retain_stack and qty or (newqty + 1)
+					if not self.ability.infinite then self.ability.qty = obj.keep_on_use_retain_stack and qty or (newqty + 1) end
 				else
-					if newqty > 0 then
+					if newqty > 0 or self.ability.infinite then
+						if self.ability.infinite then self.ability.qty = 1 end
 						self:split(newqty, true, true)
 					end
 				end
@@ -448,6 +499,7 @@ local startdissolveref = Card.start_dissolve
 function Card:start_dissolve(a,b,c,d)
 	if self.ability.qty and self.ability.qty > 1 and Incantation.consumable_in_use and self.cardinuse and not self.ignore_incantation_consumable_in_use then return end
 	self.ignorestacking = true
+	self:remove_stack_display()
 	return startdissolveref(self,a,b,c,d)
 end
 
@@ -474,7 +526,7 @@ end
 G.FUNCS.can_split_card = function(e)
 	local card = e.config.ref_table
 	local splitone = e.config.issplitone
-	if (card:getQty()) > 1 and card.highlighted and CanUseStackButtons() and not card.ignorestacking then
+	if card:getQty() > 1 and card:CanDivide() and card.highlighted and CanUseStackButtons() and not card.ignorestacking then
         e.config.colour = splitone and G.C.GREEN or G.C.PURPLE
         e.config.button = splitone and 'split_one' or 'split_half'
 		e.states.visible = true
@@ -513,7 +565,7 @@ end
 G.FUNCS.can_use_all = function(e)
 	local card = e.config.ref_table
 	local obj = card.config.center
-	if card:CanBulkUse() and ((tablecontains(BulkUsable, card.ability.set) or tablecontains(BulkUsableIndividual, card.config.center_key)) or (obj.bulk_use and type(obj.bulk_use) == 'function')) and (card:getQty()) > 1 and card.highlighted and CanUseStackButtons() and not card.ignorestacking then
+	if card:CanBulkUse() and ((tablecontains(Incantation.BulkUsable, card.ability.set) or tablecontains(Incantation.BulkUsableIndividual, card.config.center_key)) or (obj.bulk_use and type(obj.bulk_use) == 'function')) and (card:getQty()) > 1 and card.highlighted and CanUseStackButtons() and not card.ignorestacking then
         e.config.colour = G.C.DARK_EDITION
         e.config.button = 'use_all'
 		e.states.visible = true
@@ -527,7 +579,7 @@ end
 G.FUNCS.can_use_every_planet = function(e)
 	local card = e.config.ref_table
 	local obj = card.config.center
-	if (((card.config or {}).center or {}).set or '') == 'Planet' and card:CanBulkUse() and CanUseStackButtons() and not card.ignorestacking and not obj.ignore_allplanets then
+	if ((((card.config or {}).center or {}).set or '') == 'Planet' or card:CanMassUse()) and card:CanBulkUse() and CanUseStackButtons() and not card.ignorestacking and not obj.ignore_allplanets then
         e.config.colour = G.C.SECONDARY_SET.Planet
         e.config.button = 'use_every_planet'
 		e.states.visible = true
@@ -581,7 +633,11 @@ function runthrough_planets()
 		local card = G.play.cards[i]
 		if card then
 			local obj = card.config.center
-			if (((card.config or {}).center or {}).set or '') == 'Planet' then
+			if (((card.config or {}).center or {}).set or '') == 'Planet' or card:CanMassUse() then
+				G.E_MANAGER:add_event(Event({delay = 0.1, func = function()
+					if card then card.highlighted = true play_sound('button', 1.5) end
+					return true
+				end}))
 				card.bulkuse = card:CanBulkUse() and math.max(1, card:getQty()) > 1
 				card.force_incantation_acceleration = true
 				card:use_consumeable(G.consumeables)
@@ -604,9 +660,13 @@ function runthrough_planets()
 						end
 					end
 				end
-				G.E_MANAGER:add_event(Event({func = function()
-					card.ignore_incantation_consumable_in_use = true
-					card:start_dissolve()
+				G.E_MANAGER:add_event(Event({delay = 0.1, func = function()
+					if card then
+						card.highlighted = false
+						play_sound('button', 1.25)
+						card.ignore_incantation_consumable_in_use = true
+						card:start_dissolve()
+					end
 					return true
 				end}))
 			end
@@ -630,7 +690,7 @@ G.FUNCS.use_every_planet = function(e)
 		local card = G.consumeables.cards[i]
 		if card then
 			local obj = card.config.center
-			if (((card.config or {}).center or {}).set or '') == 'Planet' and (not obj.can_use or obj:can_use(card)) and not obj.ignore_allplanets then
+			if ((((card.config or {}).center or {}).set or '') == 'Planet' or card:CanMassUse()) and (not obj.can_use or obj:can_use(card)) and not obj.ignore_allplanets then
 				table.insert(targets, card)
 			end
 		end
@@ -662,12 +722,49 @@ end
 
 G.FUNCS.disablestackdisplay = function(e)
 	local card = e.config.ref_table
-	e.states.visible = ((card:getQty()) > 1 and not card.ignorestacking) or card.cardinuse
+	e.states.visible = (card.ability or {}).infinite or ((card:getQty()) > 1 and not card.ignorestacking) or card.cardinuse
 end
 
 function Card:create_stack_display()
-	if not self.children.stackdisplay and self:CanStack() and not self.playing_card then
-		self.children.stackdisplay = UIBox {
+	if self:CanStack() and not self.playing_card then
+		if self.children.stackdisplay then self.children.stackdisplay:remove(); self.children.stackdisplay = nil end
+		self.children.stackdisplay = (self.ability or {}).infinite and UIBox {
+			definition = {
+				n = G.UIT.ROOT,
+				config = {
+					minh = 0.6,
+					maxh = 1.2,
+					minw = 0.5,
+					maxw = 2,
+					r = 0.001,
+					padding = 0.1,
+					align = 'cm',
+					colour = adjust_alpha(darken(G.C.GREEN, 0.8), 0.6),
+					shadow = false,
+					func = 'disablestackdisplay',
+					ref_table = self
+				},
+				nodes = {
+					{
+						n = G.UIT.T,
+						config = {
+							text = 'Infinite',
+							scale = 0.4,
+							colour = G.C.DARK_EDITION
+						}
+					}
+				}
+			},
+			config = {
+				align = DisplayAlignment,
+				bond = 'Strong',
+				parent = self
+			},
+			states = {
+				collide = { can = false },
+				drag = { can = true }
+			}
+		} or UIBox {
 			definition = {
 				n = G.UIT.ROOT,
 				config = {
@@ -704,7 +801,7 @@ function Card:create_stack_display()
 				}
 			},
 			config = {
-				align = 'cm',
+				align = DisplayAlignment,
 				bond = 'Strong',
 				parent = self
 			},
@@ -714,6 +811,10 @@ function Card:create_stack_display()
 			}
 		}
 	end
+end
+
+function Card:remove_stack_display()
+	if self.children.stackdisplay then self.children.stackdisplay:remove(); self.children.stackdisplay = nil end
 end
 
 local card_load_ref = Card.load
@@ -732,17 +833,12 @@ function Card:add_to_deck(from_debuff)
 	if G.consumeables then
 		if self:CanStack() then
 			if not self.ignorestacking then
-				G.E_MANAGER:add_event(Event({
-					trigger = 'after',
-					delay = 0.1,
-					blocking = false,
-					func = function()
-						if self and self.area and self.area ~= 'shop' and self.area ~= 'pack_cards' then
-							self:try_merge()
-						end
-						return true
+				QR(function()
+					if self and self.area and self.area ~= 'shop' and self.area ~= 'pack_cards' then
+						self:try_merge()
 					end
-				}))
+					return true
+				end, Incantation.DelayStacking or 0)
 			end
 			self.ignorestacking = nil
 		end
@@ -752,7 +848,7 @@ end
 local hlref = Card.highlight
 
 function Card:highlight(is_highlighted)
-	local isplanet = ((self.ability or {}).set or '') == 'Planet'
+	local isplanet = ((self.ability or {}).set or '') == 'Planet' or self:CanMassUse()
 	if self:CanStack() and self.added_to_deck and not self.ignorestacking then
 		if is_highlighted then
 			if isplanet then
@@ -777,7 +873,7 @@ function Card:highlight(is_highlighted)
 							{
 								n = G.UIT.T,
 								config = {
-									text = 'MASS-USE PLANETS',
+									text = 'MASS USE',
 									scale = 0.3,
 									colour = G.C.UI.TEXT_LIGHT
 								}
@@ -1052,6 +1148,7 @@ if not (SMODS.Mods['jen'] or {}).can_load then
 							end
 							local card = copy_card(center, nil)
 							card.ability.qty = 1
+							card.ability.infinite = nil
 							card:set_edition({negative = true}, true)
 							card:add_to_deck()
 							G.consumeables:emplace(card) 
