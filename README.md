@@ -10,7 +10,8 @@ Collection of mods I've made for Balatro
 Read more below for info about compatibility on Almanac
 
 # Wait, where is Jen's Almanac?
-Almanac is currently not available right now.
+Almanac is currently not available on GitHub right now. It will be available on GitHub when 0.1.0 is released.
+If you want Almanac right now, you can find it in the Discord server [here](https://discord.gg/almanac).
 
 # Installation
 
