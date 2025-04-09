@@ -6,11 +6,94 @@
 --- MOD_DESCRIPTION: Some functions that I commonly use which some people might find a use for
 --- BADGE_COLOR: 000000
 --- PREFIX: jenlib
---- VERSION: 0.3.5
+--- VERSION: 0.4.0
 --- LOADER_VERSION_GEQ: 1.0.0
 
 --Global table, don't modify!
 jl = {}
+
+--Returns a table where each element is a single-character string derived from the given string
+function jl.string_to_table(str)
+	if type(str) == 'number' then str = tostring(str) end
+	local tbl = {}
+	if not str then return tbl end
+	
+	for i = 1, string.len(str) do
+		tbl[i] = string.sub(str, i, i)
+	end
+	
+	return tbl
+end
+
+--Divides a string based on a given separator, then returns a table containing each string as an element
+function jl.explode(sep, str)
+	sep = tostring(sep)
+	if not sep then return 'error' end
+	if sep == '' then return jl.string_to_table(str) end
+	
+	local ret = {}
+	local curpos = 1
+	
+	for i = 1, string.len(str) do
+		local pos1, pos2 = string.find( str, sep, curpos, false )
+		if not pos1 then break end
+		ret[i] = string.sub(str, curpos, pos1 - 1)
+		curpos = pos2 + 1
+	end
+	
+	ret[#ret + 1] = string.sub(str, curpos)
+	
+	return ret
+end
+
+--Convenience functions for formatting text
+function jl.pluschips(txt, nocap)
+	return '{C:chips}+' .. txt .. (nocap and '' or '{}')
+end
+
+function jl.plusmult(txt, nocap)
+	return '{C:mult}+' .. txt .. (nocap and '' or '{}')
+end
+
+function jl.mulchips(txt, nocap)
+	return '{X:chips,C:white}x' .. txt .. (nocap and '' or '{}')
+end
+
+function jl.mulmult(txt, nocap)
+	return '{X:mult,C:white}x' .. txt .. (nocap and '' or '{}')
+end
+
+function jl.expochips(txt, nocap)
+	return '{X:chips,C:dark_edition}^' .. txt .. (nocap and '' or '{}')
+end
+
+function jl.expomult(txt, nocap)
+	return '{X:mult,C:dark_edition}^' .. txt .. (nocap and '' or '{}')
+end
+
+function jl.tetchips(txt, nocap)
+	return '{X:chips,C:jen_RGB}^^' .. txt .. (nocap and '' or '{}')
+end
+
+function jl.tetmult(txt, nocap)
+	return '{X:mult,C:jen_RGB}^^' .. txt .. (nocap and '' or '{}')
+end
+
+function jl.penchips(txt, nocap)
+	return '{X:chips,C:black}^^^' .. txt .. (nocap and '' or '{}')
+end
+
+function jl.penmult(txt, nocap)
+	return '{X:mult,C:black}^^^' .. txt .. (nocap and '' or '{}')
+end
+
+function jl.hypchips(txt, nocap, arrows)
+	return '{X:chips,C:cry_ember}' .. string.rep('^', arrows or 4) .. txt .. (nocap and '' or '{}')
+end
+
+function jl.hypmult(txt, nocap, arrows)
+	return '{X:mult,C:cry_twilight}' .. string.rep('^', arrows or 4) .. txt .. (nocap and '' or '{}')
+end
 
 --Checks a string against a table of strings
 function jl.bf(needle, haystack)
@@ -173,13 +256,13 @@ function jl.hcm(newchips, newmult, notif)
 end
 
 --Updates the hand text to a specified hand
-function jl.th(hand)
+function jl.th(hand, notify)
 	if hand == 'all' or hand == 'allhands' or hand == 'all_hands' then
-		jl.h(localize('k_all_hands'), '...', '...', '')
+		jl.h(localize('k_all_hands'), '...', '...', '', notify)
 	elseif G.GAME.hands[hand or 'NO_HAND_SPECIFIED'] then
-		jl.h(localize(hand, 'poker_hands'), G.GAME.hands[hand].chips, G.GAME.hands[hand].mult, G.GAME.hands[hand].level)
+		jl.h(localize(hand, 'poker_hands'), G.GAME.hands[hand].chips, G.GAME.hands[hand].mult, G.GAME.hands[hand].level, notify)
 	else
-		jl.h('ERROR', 'ERROR', 'ERROR', 'ERROR')
+		jl.h('ERROR', 'ERROR', 'ERROR', 'ERROR', notify)
 	end
 end
 
@@ -320,6 +403,7 @@ local invalid_values = {
 	'nane0',
 	'-nane0',
 	'nan',
+	'nane',
 	'inf',
 	'-naneinf',
 	'-nan',
@@ -376,14 +460,14 @@ function jl.rd(time, queue)
 	realdelay(time, queue)
 end
 
---Use in a joker/card to check if it's the one currently scoring
+--Checks the context if it's suitable for a joker to score
 function jl.scj(context)
 	return context.cardarea and context.cardarea == G.play and not context.before and not context.after and not context.repetition
 end
 
---This is for better calc in the future, but for now just reuse jl.scj
+--Checks the context if it's suitable for a playing card to score
 function jl.sc(context)
-	return jl.scj(context) --context.cardarea and context.cardarea == G.play and context.main_scoring
+	return context.cardarea and context.cardarea == G.play and context.main_scoring
 end
 
 --Gets the most-played hand
@@ -494,6 +578,7 @@ function jl.rndhand(ignore, seed, allowhidden)
 	return chosen_hand
 end
 
+
 --Checks if a given table of contexts does not have joker retriggers involved
 function jl.njr(context)
 	return not context.retrigger_joker_check and not context.retrigger_joker
@@ -561,6 +646,51 @@ function Card:nosuitandrank() --alias
 	return self:norank() and self:nosuit()
 end
 
+--Counts the number of suits in the deck, call with no argument to count all suits
+function jl.countsuit(suit)
+	if not G.playing_cards then return {} end
+	if suit then
+		local quantity = 0
+		for k, v in ipairs(G.playing_cards) do
+			if v.ability.name ~= 'Stone Card' and not v:nosuit() and v.base.suit == suit then 
+				quantity = quantity + 1
+			end
+		end
+		return quantity
+	else
+		local suitquantity = {}
+		for k, v in ipairs(G.playing_cards) do
+			if v.ability.name ~= 'Stone Card' and not v:nosuit() then 
+				suitquantity[v.base.suit] = (suitquantity[v.base.suit] or 0) + 1
+			end
+		end
+		return suitquantity
+	end
+end
+
+--Counts the number of cards that have the specified rank, call with no argument to count all ranks
+function jl.countrank(rank)
+	if not G.playing_cards then return 0 end
+	if rank then
+		rank = tostring(rank)
+		local quantity = 0
+		for k, v in ipairs(G.playing_cards) do
+			if v.ability.name ~= 'Stone Card' and not v:norank() and v.base.value == rank then 
+				quantity = quantity + 1
+			end
+		end
+		return quantity
+	else
+		local rankquantity = {}
+		for k, v in ipairs(G.playing_cards) do
+			if v.ability.name ~= 'Stone Card' and not v:norank() then 
+				rankquantity[v.base.value] = (rankquantity[v.base.value] or 0) + 1
+			end
+		end
+		return rankquantity
+	end
+end
+
 --Gets tiring to type all the G.E_MANAGER mumbojumbo every time for things that are simple
 function Q(fc, de, t, tr, bl, ba)
 	G.E_MANAGER:add_event(Event({
@@ -598,6 +728,14 @@ function jl.rnd(seed, excluded_flags, pool, ignore_pooling, attempts)
 	local passes = 0
 	local tries = attempts or 500
 	local pooling = false
+	if (SMODS.Mods.jen or {}).can_load and (G.GAME or {}).obsidian then
+		for k, v in ipairs(excluded_flags) do
+			if v == 'hidden' then
+				table.remove(excluded_flags, k)
+				break
+			end
+		end
+	end
 	while true do
 		pooling = false
 		tries = tries - 1
