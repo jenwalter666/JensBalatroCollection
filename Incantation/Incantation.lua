@@ -293,6 +293,10 @@ end
 
 function set_consumeable_usage(card, qty)
 	qty = math.floor(qty or 1)
+	if (SMODS.Mods['Cryptid'] or {}).can_load then
+		if not G.GAME.cry_last_used_consumeables then G.GAME.cry_last_used_consumeables = {} end
+		G.GAME.cry_last_used_consumeables[#G.GAME.cry_last_used_consumeables+1] = card.config.center.key
+	end
     if card.config.center_key and card.ability.consumeable then
       if G.PROFILES[G.SETTINGS.profile].consumeable_usage[card.config.center_key] then
         G.PROFILES[G.SETTINGS.profile].consumeable_usage[card.config.center_key].count = G.PROFILES[G.SETTINGS.profile].consumeable_usage[card.config.center_key].count + qty
