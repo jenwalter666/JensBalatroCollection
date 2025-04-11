@@ -294,13 +294,17 @@ end
 function set_consumeable_usage(card, qty)
 	qty = math.floor(qty or 1)
 	if (SMODS.Mods['Cryptid'] or {}).can_load then
-		if not G.GAME.cry_last_used_consumeables then G.GAME.cry_last_used_consumeables = {} end
-		local nextindex = #G.GAME.cry_last_used_consumeables+1
-		G.GAME.cry_last_used_consumeables[nextindex] = card.config.center.key
-		if nextindex > 3 then
-			table.remove(G.GAME.cry_last_used_consumeables, 1)
-		end
-	end
+        for i = 1, #G.GAME.cry_last_used_consumeables do
+            if not G.GAME.cry_function_stupid_workaround then G.GAME.cry_function_stupid_workaround = {} end
+            G.GAME.cry_function_stupid_workaround[i] = G.GAME.cry_last_used_consumeables[i]
+        end
+        if not G.GAME.cry_last_used_consumeables then G.GAME.cry_last_used_consumeables = {} end
+        local nextindex = #G.GAME.cry_last_used_consumeables+1
+        G.GAME.cry_last_used_consumeables[nextindex] = card.config.center.key
+        if nextindex > 3 then
+            table.remove(G.GAME.cry_last_used_consumeables, 1)
+        end
+    end
     if card.config.center_key and card.ability.consumeable then
       if G.PROFILES[G.SETTINGS.profile].consumeable_usage[card.config.center_key] then
         G.PROFILES[G.SETTINGS.profile].consumeable_usage[card.config.center_key].count = G.PROFILES[G.SETTINGS.profile].consumeable_usage[card.config.center_key].count + qty
