@@ -261,6 +261,8 @@ function Card:CanStack()
 		return false
 	elseif CFG.NegativesOnly and not (self.edition and self.edition.negative) then
 		return false
+	elseif self.config.center.can_stack ~= nil and (type(self.config.center.can_stack) == 'function' and not self.config.center:can_stack() or self.config.center.can_stack == false) then
+		return false
 	elseif CFG.StackAnything then
 		return true
 	end
