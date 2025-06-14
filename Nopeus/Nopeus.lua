@@ -18,7 +18,7 @@ Nopeus = {
 	AllText = 'All',
 	NoAgain = 'No "Again!"',
 	NoMisc = 'No Misc.',
-	NoText = 'None'
+	NoText = 'None',
 }
 
 function Nopeus.FF()
@@ -32,6 +32,11 @@ end
 G.FUNCS.change_statustext = function(args)
   G.SETTINGS.STATUSTEXT = (args.to_val == Nopeus.NoAgain and 1 or args.to_val == Nopeus.NoMisc and 2 or args.to_val == Nopeus.NoText and 3 or 0)
 end
+
+G.FUNCS.change_scoringsounds = function(args)
+  G.SETTINGS.SCORINGSOUNDS = (args.to_val == Nopeus.NoText and 1 or 0)
+end
+
 
 function G.UIDEF.nopeus_options()
 	local speeds = create_option_cycle({label = localize('b_set_gamespeed'), scale = 0.8, options = {0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 3.5, 4, 8, 16, 32, 64, 128}, opt_callback = 'change_gamespeed', current_option = (
@@ -112,6 +117,16 @@ function G.UIDEF.nopeus_statustext_options()
 		G.SETTINGS.STATUSTEXT + 1
 	)})
 	
+	return st
+end
+
+function G.UIDEF.nopeus_scoringsounds_options()
+	if not G.SETTINGS.FASTFORWARD then G.SETTINGS.FASTFORWARD = 0 end
+	if not G.SETTINGS.SCORINGSOUNDS then G.SETTINGS.SCORINGSOUNDS = 0 end
+	local st = create_option_cycle({label = 'Sound Effects During Scoring', colour = G.C.RED, w = 5, scale = 0.8, options = {Nopeus.AllText, Nopeus.NoText}, opt_callback = 'change_scoringsounds', current_option = (
+		G.SETTINGS.SCORINGSOUNDS + 1
+	)})
+
 	return st
 end
 
@@ -222,4 +237,32 @@ G.FUNCS.end_consumeable = function(e, delayfac)
 			G.pack_cards = nil
 		return true
 	end}))
+end
+
+if SMODS and SMODS.Mods and SMODS.Mods.Talisman.can_load then
+	local add_eventref = G.E_MANAGER.add_event
+	function G.E_MANAGER:add_event(ev)
+		if G.SETTINGS.FASTFORWARD >= 3 and G.jokers and G.CURRENT_CALC_TIME and G.CURRENT_CALC_TIME > 0.01 and G.OVERLAY_MENU and G.scoring_text and Talisman.scoring_state and Talisman.scoring_state ~= "after" and Talisman.scoring_state ~= "final_scoring" then
+			if ev.func then ev.func(1) end --scary
+		else
+			return add_eventref(self, ev)
+		end
+	end
+	local play_soundref = play_sound
+	function play_sound(...)
+		if G.SETTINGS.SCORINGSOUNDS == 1 and G.jokers and G.CURRENT_CALC_TIME and G.CURRENT_CALC_TIME > 0.01 and G.OVERLAY_MENU and G.scoring_text and Talisman.scoring_state and Talisman.scoring_state ~= "after" and Talisman.scoring_state ~= "final_scoring" then
+
+		else
+			play_soundref(...)
+		end
+	end
+else
+		local play_soundref = play_sound
+	function play_sound(...)
+		if G.SETTINGS.SCORINGSOUNDS == 1 and G.jokers and (mult or hand_chps)  then
+
+		else
+			play_soundref(...)
+		end
+	end
 end
