@@ -64,3 +64,12 @@ payload = '''G.UIDEF.nopeus_options(),
 G.UIDEF.nopeus_fastforward_options(),
 G.UIDEF.nopeus_statustext_options(),'''
 match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = "functions/UI_definitions.lua"
+pattern = "create_slider({label = localize('b_set_game_vol'), w = 5, h = 0.4, ref_table = G.SETTINGS.SOUND, ref_value = 'game_sounds_volume', min = 0, max = 100}),"
+position = "after"
+payload = '''
+G.UIDEF.nopeus_scoringsounds_options(),'''
+match_indent = true
